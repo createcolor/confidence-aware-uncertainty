@@ -1,0 +1,67 @@
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class DiceScore(nn.Module):
+    def __init__(self, use_sigmoid: bool=True, binarize: bool=True, smooth: float=1.) -> None:
+        super(DiceScore, self).__init__()
+        self.use_sigmoid = use_sigmoid
+        self.binarize = binarize
+        self.smooth = smooth
+
+    def forward(self, inputs: torch.Tensor, targets: torch.Tensor) -> float:
+        if self.use_sigmoid:
+            inputs = torch.sigmoid(inputs)
+        if self.binarize:
+            inputs = inputs >= 0.5
+
+        #flatten label and prediction tensors
+        inputs = inputs.reshape(-1)
+        targets = targets.reshape(-1)
+        
+        intersection = (inputs * targets).sum()                            
+        dice = (2. * intersection + self.smooth) / (inputs.sum() + targets.sum() + self.smooth)  
+        
+        return dice
+    
+class MulticlassDice(nn.Module):
+    def __init__(self, n_classes: int | None=None, reduction: str | None="mean",
+                 onehot_labels: bool=True, use_softmax: bool=True, binarize: bool=True, smooth: float=1.):
+        super(MulticlassDice, self).__init__()
+        self.classes = n_classes
+        self.reduction = reduction
+        self.onehot = onehot_labels
+        self.softmax = use_softmax
+        self.binarize = binarize
+        self.criteria = DiceScore(use_sigmoid=False, binarize=False, smooth=smooth)
+
+    def forward(self, inputs: torch.Tensor, targets: torch.Tensor) -> float:
+        n_classes = inputs.shape[-1] if self.classes is None else self.classes
+
+        if self.softmax:
+            inputs = F.softmax(inputs, dim=1)
+
+        if self.binarize:
+            inputs = F.one_hot(torch.argmax(inputs, dim=1), num_classes=n_classes)
+            inputs = inputs.movedim(-1, -3)
+
+        if self.onehot:
+            targets = F.one_hot(targets, num_classes=n_classes)
+            targets = targets.movedim(-1, -3)
+
+        dice = []
+        for c in range(n_classes):
+            dice.append(self.criteria(inputs[..., c, :, :], targets[..., c, :, :]))
+
+        if self.reduction == "mean":
+            return torch.mean(torch.tensor(dice))
+        elif self.reduction is None:
+            return dice
+        
+def stacked_Dice(preds: torch.Tensor, labels: torch.Tensor, 
+                 binarize: bool=True, smooth: float=1.) -> torch.Tensor:
+    if binarize:
+        preds = preds > 0.5
+
+    intersection = (preds * labels).sum(dim=1)
+    return (2. * intersection + smooth) / (preds.sum(dim=1) + labels.sum(dim=1) + smooth)

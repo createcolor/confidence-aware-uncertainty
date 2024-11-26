@@ -1,0 +1,47 @@
+{
+    "net_dir_name": "UNet_RIGA_abnn",
+    "architecture": "unet_abnn",
+    "device_type": "cuda:0",
+    "choose_thr": false,
+    "n_channels": 3,
+    "n_classes": 3,
+    "epochs_total": 200,
+    "checkpoint_step": 20,
+    "validation_step": 5,
+    "nets_number": 10,
+
+    "learn_from_scratch": false,
+    "learn_from_model": "",
+    "pretrained_epochs": 100,
+    "use_previous_lr": false,
+
+    "net_dir_path": "",
+    "loss_func": "ABNNLoss",
+
+    "dataset": {
+        "type": "RIGA",
+        "data_path": "",
+        "gt_mode": "expert1",
+        "params": {
+            "sets": ["Magrabia", "MESSIDOR"]
+        }
+    },
+
+    "optimizer": {
+        "type": "Adam",
+        "params": {
+            "lr": 1e-04,
+            "weight_decay": 1e-04
+        }
+    },
+    "batch_size": 4,
+    "train_part": 0.75,
+
+    "lr_scheduler": {
+        "type": "StepLR",
+        "parameters": {
+            "gamma": 0.9,
+            "step_size": 10
+        }
+    }
+}

@@ -1,0 +1,26 @@
+{
+    "model": "UNet_RIGA_abnn",
+    "architecture": "unet",
+    "device": "cuda:1",
+    "nets": 10,
+    "epochs": 100,
+    "save_path": "",
+
+    "n_channels": 3,
+    "n_classes": 3,
+    "samples": 3,
+
+    "dataset": {
+        "type": "RIGA",
+        "data_path": "",
+        "gt_mode": "expert1",
+        "params": {
+            "sets": ["BinRushed"],
+            "keep_names": true,
+            "augment": false
+        }
+    },
+
+    "models_path": "",
+    "data_path": ""
+}
