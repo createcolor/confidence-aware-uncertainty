@@ -1,10 +1,10 @@
 {
-    "model": "unet_riga_abnn",
+    "model": "unet_riga_mcmc",
     "architecture": "unet",
     "device": "cuda:1",
     "nets": 10,
     "epochs": 100,
-    "save_path": "predictions/abnn",
+    "save_path": "predictions/mcmc",
 
     "n_channels": 3,
     "n_classes": 3,

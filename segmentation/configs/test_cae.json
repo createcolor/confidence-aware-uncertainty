@@ -1,15 +1,14 @@
 {
-    "model": "unet_riga_abnn",
+    "model": "unet_riga_exp",
     "architecture": "unet",
     "device": "cuda:1",
     "nets": 10,
     "epochs": 100,
-    "save_path": "predictions/abnn",
+    "save_path": "predictions/cae",
 
     "n_channels": 3,
     "n_classes": 3,
-    "samples": 10,
-
+    
     "dataset": {
         "type": "RIGA",
         "data_path": "datasets/RIGA_crop/DiscRegion",

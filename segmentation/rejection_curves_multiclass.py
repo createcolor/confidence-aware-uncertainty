@@ -47,7 +47,7 @@ if __name__ == "__main__":
         config = json.load(f)
 
     # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    device = torch.device('cpu' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     # labels = torch.load(open(config["labels_path"], 'rb')).to(device)
     labels = flatten_labels(config["dataset"], config["data_path"], config["expert_id"]).to(device)

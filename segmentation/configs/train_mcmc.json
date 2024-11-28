@@ -1,34 +1,35 @@
 {
-    "net_dir_name": "UNet_RIGA",
+    "net_dir_name": "unet_riga_mcmc",
     "architecture": "unet",
-    "device_type": "cuda:0",
-    "choose_thr": false,
+    "device_type": "cuda:1",
     "n_channels": 3,
     "n_classes": 3,
-    "epochs_total": 200,
-    "checkpoint_step": 20,
+    "epochs_total": 150,
+    "checkpoint_step": 15,
     "validation_step": 5,
     "nets_number": 10,
 
-    "learn_from_scratch": true,
+    "learn_from_scratch": false,
+    "learn_from_model": "nets/unet_riga",
+    "pretrained_epochs": 100,
+    "use_previous_lr": false,
 
-    "net_dir_path": "",
+    "net_dir_path": "nets",
     "loss_func": "CrossEntropyLoss",
 
     "dataset": {
         "type": "RIGA",
-        "data_path": "",
-        "gt_mode": "expert5",
+        "data_path": "datasets/RIGA_crop/DiscRegion",
+        "gt_mode": "expert0",
         "params": {
             "sets": ["Magrabia", "MESSIDOR"]
         }
     },
 
     "optimizer": {
-        "type": "Adam",
+        "type": "SGLD",
         "params": {
-            "lr": 1e-04,
-            "weight_decay": 1e-04
+            "lr": 1e-04
         }
     },
     "batch_size": 4,

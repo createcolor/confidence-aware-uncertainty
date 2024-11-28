@@ -106,15 +106,16 @@ class RIGADataset(Dataset):
         keys = []
 
         for subset in self.sets:
+            print(f"Loading {subset}:")
             if subset == 'MESSIDOR':
-                for file in tqdm((Path(self.data_dir) / "Image" / subset).iterdir()):
+                for file in tqdm(list((Path(self.data_dir) / "Image" / subset).iterdir())):
                     if file.suffix == '.tif':
                         image, img_labels = self._load_file(file)
                         images.append(image)
                         labels.append(img_labels)
                         keys.append(file)
             else:
-                for subdir in tqdm((Path(self.data_dir) / "Image" / subset).iterdir()):
+                for subdir in tqdm(list((Path(self.data_dir) / "Image" / subset).iterdir())):
                     if subdir.is_dir():
                         for file in subdir.iterdir():
                             if file.suffix == '.tif':

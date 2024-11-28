@@ -19,7 +19,7 @@ def parse_args():
 
     parser.add_argument('-c', '--config', type=Path, 
                         help="Path to train config .json file.",
-                        default="configs/UNet_from_scratch.json")
+                        default="segmentation/configs/UNet_from_scratch.json")
 
     args = parser.parse_args()
     return args
