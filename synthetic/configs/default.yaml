@@ -1,0 +1,27 @@
+generate_params:
+  train_max_size: 8000
+  test_size: 10000
+  dim: 800
+  mu_x: 0.0
+  sigma2_x: 0.00025
+  mu_beta: 3.0
+  sigma2_beta: 16.0
+
+estimate_params:
+  method: L-BFGS-B
+
+size_experiment:
+  sample_size_values: [125, 250, 500, 1000, 2000, 4000]
+  noise_values: [0.0, 0.5, 1.0, 1.5]
+  n_runs: 1
+  seed: 42
+  save_path: results
+  file_name: size_experiment.csv
+
+combination_experiment:
+  sample_size_values: [0, 125, 250, 500, 1000, 2000, 4000]
+  noise_values: [0.5]
+  n_runs: 10
+  seed: 42
+  save_path: results
+  file_name: combination_experiment.csv
