@@ -52,8 +52,13 @@ if __name__ == "__main__":
     # labels = torch.load(open(config["labels_path"], 'rb')).to(device)
     labels = flatten_labels(config["dataset"], config["data_path"], config["expert_id"]).to(device)
     
-    models = config.get("models_ids", [i for i in range(10)])
-    expert_models = config.get("expert_ids", [i for i in range(10)])
+    models = config["models_ids"]
+    expert_models = config["expert_ids"]
+
+    if isinstance(models, int):
+        models = [i for i in range(models)]
+    if isinstance(expert_models, int):
+        expert_models = [i for i in range(expert_models)]
 
     print("Loading predictions...")
     models_predictions = F.softmax(torch.load(config["models_predictions"]), dim=2).to(device)
