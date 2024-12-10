@@ -8,7 +8,24 @@ def evaluate_model(model_dir: Path, architecture: torch.nn.Module,
                    nets: int | list, epochs: int, 
                    metric: torch.nn.Module, data_loader: DataLoader, 
                    device: torch.device | str='cpu') -> tuple[list, dict]:
-    
+    """
+    Evaluates an ensemble of models via the given metric.
+
+    Args:
+        model_dir (Path): path to the directory where model checkpoints are stored.
+        architecture (torch.nn.Module): model architecture as a PyTorch class object.
+        nets (int or list): number of networks from the ensemble to inference (int)
+                            or their indices (list).
+        epochs (int): how long the model was trained.
+        metric (torch.nn.Module): metric to evaluate the model as a PyTorch class object.
+        data_loader (torch.utils.data.DataLoader): dataloader of the test data.
+        device (torch.device or str): device to use for computation.
+
+    Returns:
+        list: list of model predictions as PyTorch tensors.
+        dict: dictionary containing pairs of an image identifier and Dice scores
+              of the models on that image.
+    """
     predictions = []
     scores = {}
 
@@ -37,10 +54,29 @@ def evaluate_model(model_dir: Path, architecture: torch.nn.Module,
     return predictions, scores
 
 def evaluate_abnn(model_dir: Path, architecture: torch.nn.Module, 
-                   nets: list | int, epochs: int,
-                   metric: torch.nn.Module, data_loader: DataLoader, 
-                   samples: int=10, device: torch.device | str='cpu') -> tuple[list, dict]:
-    
+                  nets: list | int, epochs: int,
+                  metric: torch.nn.Module, data_loader: DataLoader, 
+                  samples: int=10, device: torch.device | str='cpu') -> tuple[list, dict]:
+    """
+    Evaluates an ABNN ensemble of models via the given metric. 
+    Predictions from each model are sampled multiple times, and the samples are averaged.
+
+    Args:
+        model_dir (Path): path to the directory where model checkpoints are stored.
+        architecture (torch.nn.Module): model architecture as a PyTorch class object.
+        nets (int or list): number of networks from the ensemble to inference (int)
+                            or their indices (list).
+        epochs (int): how long the model was trained.
+        metric (torch.nn.Module): metric to evaluate the model as a PyTorch class object.
+        data_loader (torch.utils.data.DataLoader): dataloader of the test data.
+        samples (int): how many times to sample predictions from each model.
+        device (torch.device or str): device to use for computation.
+
+    Returns:
+        list: list of model predictions as PyTorch tensors.
+        dict: dictionary containing pairs of an image identifier and Dice scores
+              of the models on that image.
+    """
     predictions = []
     scores = {}
 

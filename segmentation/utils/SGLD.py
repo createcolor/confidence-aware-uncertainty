@@ -1,3 +1,6 @@
+"""
+This code is adopted from https://github.com/Unique-Divine/Langevin-Dynamics-for-NN-Optimization.
+"""
 import torch 
 import numpy as np
 from torch._C import Value

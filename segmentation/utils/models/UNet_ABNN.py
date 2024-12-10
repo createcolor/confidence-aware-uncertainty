@@ -2,8 +2,21 @@ import torch
 import torch.nn as nn
 
 from utils.models.bnl import BNL
+from utils.models.UNet import Upsampling
 
 class ConvBlock(nn.Module):
+    """
+    Convolutional block with a bayesian normalization layer: 
+        
+        [Conv2d >> BNL >> ReLU] x 2
+
+    Args:
+        in_channels (int): number of input channels.
+        hid_channels (int): number of channels in a hidden layer.
+        out_channels (int): number of output channels.
+        kernel_size (int or tuple): size of the convolving kernel.
+        padding (int, tuple or str): padding added to all four sides of the input. 
+    """
     def __init__(self, in_channels, hid_channels, out_channels, kernel_size=3, padding=1):
         super().__init__()
 
@@ -23,20 +36,18 @@ class ConvBlock(nn.Module):
     def forward(self, x):
         return self.conv_block(x)
     
-class Upsampling(nn.Module):
-    def __init__(self, in_channels, out_channels):
-        super().__init__()
-
-        self.upsample = nn.Sequential(*[nn.Upsample(scale_factor=2),
-                                        nn.Conv2d(in_channels=in_channels, 
-                                                  out_channels=out_channels, 
-                                                  kernel_size=2, 
-                                                  padding='same')])
-        
-    def forward(self, x):
-        return self.upsample(x)
-    
 class UNet_Encoder(nn.Module):
+    """
+    Encoder part of the UNet with BNL blocks:
+
+        [ConvBlock >> MaxPool2d] x 4 >> ConvBlock.
+
+    Reduces image linear size in half for each MaxPool.
+    Gradually increases the number of channels up until 1024.
+
+    Args:
+        in_channels (int): number of input channels.
+    """
     def __init__(self, init_channels):
         super().__init__()
 
@@ -59,6 +70,20 @@ class UNet_Encoder(nn.Module):
         return e4, encoder_outputs
     
 class UNet_Decoder(nn.Module):
+    """
+    Decoder part of the UNet with BNL blocks:
+
+        [Upsampling >> ConvBlock] x 4
+
+    After each Upsampling, the output is concatenated with an output of an encoder
+    layer of the same depth. For more info, see https://arxiv.org/abs/1505.04597.
+
+    Doubles image linear size for each Upsampling.
+    Gradually decreases the number of channels up until the number of classes.
+
+    Args:
+        num_classes (int): number of classes to predict.
+    """
     def __init__(self, num_classes):
         super().__init__()
 
@@ -94,6 +119,14 @@ class UNet_Decoder(nn.Module):
         return self.final(d3)
     
 class UNet_ABNN(nn.Module):
+    """
+    UNet architecture with BNL blocks consisting of a UNet encoder and UNet decoder
+    with skip-connections.
+
+    Args:
+        in_channels (int): number of input channels.
+        num_classes (int): number of classes to predict.
+    """
     def __init__(self, n_channels=3, n_classes=1):
         super().__init__()
 

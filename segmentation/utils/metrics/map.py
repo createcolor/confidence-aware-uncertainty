@@ -1,4 +1,8 @@
 """
+This code is adopted from https://github.com/abtinmU/MakeMe-BNN.
+"""
+
+"""
 
 This file defines the key components of the Adaptive Bayesian Neural Network (ABNN) model, 
 including the Bayesian Normalization Layer (BNL) and the custom Maximum A Posteriori (MAP) 

@@ -47,6 +47,8 @@ if __name__ == "__main__":
     logdir = save_dir / "plots"
     if not save_dir.exists():
         os.makedirs(save_dir)
+    if not logdir.exists():
+        os.makedirs(logdir)
 
     # Save a copy of config;
     with open(str(save_dir / f"{config.get('net_dir_name')}_config.json"), 'w', encoding='utf-8') as f:
@@ -152,7 +154,6 @@ if __name__ == "__main__":
                 pretrained_epochs=checkpoint,
                 data_tr=train_dls[idx],
                 data_val=val_dls[idx],
-                logdir=logdir,
                 device=device,
                 writer=writers[idx],
                 save_path=save_path,

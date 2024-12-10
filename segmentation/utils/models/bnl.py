@@ -1,3 +1,7 @@
+"""
+This code is adopted from https://github.com/abtinmU/MakeMe-BNN.
+"""
+
 import torch
 import torch.nn as nn
 

@@ -7,25 +7,42 @@ from os import makedirs
 
 def train(model: torch.nn.Module, 
           optimizer: torch.optim.Optimizer, 
-          scheduler: torch.optim.lr_scheduler._LRScheduler,
+          scheduler: torch.optim.lr_scheduler._LRScheduler | None,
           loss_fn: torch.nn.Module,
           metric: torch.nn.Module,
           epochs: int, 
           data_tr: DataLoader,
           data_val: DataLoader,
-          logdir: Path,
           device: torch.device | str='cpu',
           writer: SummaryWriter | None=None,
           pretrained_epochs: int=0,
           save_path: Path | None=None,
           validation_step: int=1):
-    
+    """
+    Trains a model for specified number of epochs. Validates the model at set intervals.
+    After each epoch prints the value of the loss function on train and validations sets,
+    as well as the value of the target metric on the validation set.
+    If writer is provided, logs metrics to TensorBoard.
+    If save path is provided, saves the model after training.
+
+    Args:
+        model (torch.nn.Module): model to train.
+        optimizer (torch.optim.Optimizer): optimizer for a model.
+        scheduler (torch.optim.lr_scheduler._LRScheduler or None): scheduler for an optimizer.
+        loss_fn (torch.nn.Module): loss function for training.
+        metric (torch.nn.Module): metric for evaluation on validation.
+        epochs (int): number of epochs to train for.
+        data_tr (torch.utils.data.DataLoader): data loader for training data.
+        data_val (torch.utils.data.DataLoader): data loader for validation data.
+        device (torch.device or str): device that will be used for computation.
+        writer (tensorboardX.SummaryWriter or None): summary writer for logging metrics to TensorBoard.
+        pretrained_epochs (int): number of epochs the model was previously trained for. Only affects logging.
+        save_path (Path or None): where to save the model parameters after training.
+        validation_step (int): how often to perform validation.
+    """
     train_losses = []
     val_losses = []
     val_scores = []
-
-    if not logdir.exists():
-        makedirs(logdir)
 
     log_template = "Epoch {ep:03d}/{epochs:03d}, train loss: {t_loss:0.6f}, val loss: {v_loss:0.6f}, val score {v_score:0.4f}"
 

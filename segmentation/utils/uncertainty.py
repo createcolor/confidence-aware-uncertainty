@@ -11,7 +11,8 @@ def load_mcmc(path: Path | str, step_size: int, total_epochs: int) -> torch.Tens
         total_epochs (int): number of epochs the model was trained for.
 
     Returns:
-        torch.Tensor: a tensor of shape (num. nets, num. checkpoints, num. classes, height, width)
+        torch.Tensor: a tensor of shape (num. nets, num. checkpoints, num. samples, 
+                                         num. classes, height, width)
     """
     epoch_preds = []
     for step in range(step_size, total_epochs + 1, step_size):
@@ -28,13 +29,13 @@ def calculate_uncertainty(preds: torch.Tensor, method: str | None="var") -> torc
     If the chosen method is "var", then the uncertainty is the variance of predictions along
     the first dimension:
 
-    U = 1/K * sum [(pred - pred.mean) ** 2]
+        U = 1/K * sum [(pred - pred.mean) ** 2]
 
     If the chosen method is "bern_var", then the uncertainty for each net is the variance of
     its predictions assuming Bernoulli distribution, and the total uncertainty is the mean
     uncertainty per net:
 
-    U = 1/K * sum [pred * (1 - pred)]
+        U = 1/K * sum [pred * (1 - pred)]
 
     If the chosen method is None, returns a zero uncertainty map. This behavior is needed for
     the tv_uncertainty function.
@@ -103,7 +104,7 @@ def tv_uncertainty(preds: torch.Tensor | None,
 
     return unc_ens + unc_exp
 
-def multiclass_uncertainty(n_classes: int, preds: torch.Tensor | None, expert_preds: torch.Tensor | None=None, #
+def multiclass_uncertainty(n_classes: int, preds: torch.Tensor | None, expert_preds: torch.Tensor | None=None,
                            method: str | None='var', expert_method: str | None=None) -> torch.Tensor:
     """
     Calculate agregate uncetainty from multiple classes. For this, multiple instances of 
