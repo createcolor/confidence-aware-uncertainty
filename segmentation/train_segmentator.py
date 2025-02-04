@@ -1,18 +1,18 @@
+import os
+import json
+import argparse
+from pathlib import Path
 import torch
 import torch.utils
 from torch.utils.data import DataLoader, random_split
-import os
-import json
 import torch.utils.data
 from tqdm import tqdm
-import argparse
-from pathlib import Path
-from os import makedirs
 from tensorboardX import SummaryWriter
 
-from utils.train import train
-from utils.object_loader import get_architecture, get_dataset, get_loss, get_optimizer, get_scheduler
-from utils.metrics.dice import DiceScore, MulticlassDice
+from utils.train import train # pylint: disable=import-error
+from utils.object_loader import (get_architecture, get_dataset, # pylint: disable=import-error
+                                 get_loss, get_optimizer, get_scheduler)
+from utils.metrics.dice import DiceScore, MulticlassDice # pylint: disable=import-error
 
 def parse_args():
     parser = argparse.ArgumentParser('Train a segmentator.')
@@ -21,14 +21,14 @@ def parse_args():
                         help="Path to train config .json file.",
                         default="segmentation/configs/UNet_from_scratch.json")
 
-    args = parser.parse_args()
-    return args
+    parsed_args = parser.parse_args()
+    return parsed_args
 
 if __name__ == "__main__":
     args = parse_args()
 
     # Load config;
-    with open(args.config, 'r') as f:
+    with open(args.config, 'r', encoding='utf-8') as f:
         config = json.load(f)
 
     # Set device;
@@ -40,7 +40,8 @@ if __name__ == "__main__":
     # Load data;
     print("Loading data...")
     ds_dict = config["dataset"]
-    data = get_dataset(ds_dict["type"], dir=ds_dict["data_path"], gt=ds_dict["gt_mode"], params=ds_dict["params"])
+    data = get_dataset(ds_dict["type"], dir=ds_dict["data_path"],
+                       gt=ds_dict["gt_mode"], params=ds_dict["params"])
 
     # Create save directories;
     save_dir = Path(config["net_dir_path"], config["net_dir_name"])
@@ -51,7 +52,8 @@ if __name__ == "__main__":
         os.makedirs(logdir)
 
     # Save a copy of config;
-    with open(str(save_dir / f"{config.get('net_dir_name')}_config.json"), 'w', encoding='utf-8') as f:
+    with open(str(save_dir / f"{config.get('net_dir_name')}_config.json"),
+              'w', encoding='utf-8') as f:
         json.dump(config, f, ensure_ascii=False, indent=4)
 
     # This prepares lists for the ensemble;
@@ -65,7 +67,7 @@ if __name__ == "__main__":
     # are done on the same data split;
     if not config.get("learn_from_scratch", True):
         load_dir = Path(config["learn_from_model"])
-        with open(load_dir / "seeds", 'r') as f:
+        with open(load_dir / "seeds", 'r', encoding='utf-8') as f:
             load_seeds = json.load(f)["seeds"]
 
     print("Initializing models:")
@@ -79,12 +81,14 @@ if __name__ == "__main__":
     optimizer_class, optimizer_params = get_optimizer(config["optimizer"])
 
     # Gather scheduler parameters
+    scheduler_type = None
+    scheduler_params = {}
     scheduler_config = config.get("lr_scheduler", None)
     if scheduler_config is not None:
-        last_epoch = config.get("pretrained_epochs", -1) if config.get("use_previous_lr", False) else -1
-        scheduler_type, scheduler_params = get_scheduler(scheduler_config["type"], last_epoch, scheduler_config["parameters"])
-    else:
-        scheduler_type = None
+        last_epoch = config.get("pretrained_epochs", -1) if config.get("use_previous_lr",
+                                                                       False) else -1
+        scheduler_type, scheduler_params = get_scheduler(scheduler_config["type"], last_epoch,
+                                                         scheduler_config["parameters"])
 
     for idx in tqdm(range(nets_number)):
         # Create model instance
@@ -97,13 +101,13 @@ if __name__ == "__main__":
 
         # Create optimizer instance
         optimizer = optimizer_class(params=model.parameters(), **optimizer_params)
-        
+
         # Create scheduler instance
         if scheduler_type is not None:
             scheduler = scheduler_type(optimizer=optimizer, **scheduler_params)
         else:
             scheduler = None
-        
+
         # Seed the generator to create an appropriate train/val split;
         gen = torch.Generator()
         if not config.get("learn_from_scratch", True):
@@ -113,7 +117,8 @@ if __name__ == "__main__":
         seeds.append(gen.initial_seed())
 
         # Splir the data;
-        train_data, val_data = random_split(data, [config["train_part"], 1 - config["train_part"]], gen)
+        train_data, val_data = random_split(data, [config["train_part"],
+                                                   1 - config["train_part"]], gen)
         train_loader = DataLoader(train_data, batch_size=config["batch_size"], shuffle=True)
         val_loader = DataLoader(val_data, batch_size=config["batch_size"], shuffle=True)
 
@@ -128,7 +133,7 @@ if __name__ == "__main__":
         writers.append(writer)
 
     # Save a copy of generator seeds for future use;
-    with open(save_dir / "seeds", 'w') as f:
+    with open(save_dir / "seeds", 'w', encoding='utf-8') as f:
         json.dump({"seeds": seeds}, f)
 
     # Set training length and checkpoints;
@@ -137,14 +142,17 @@ if __name__ == "__main__":
     validation_step = config.get("validation_step", 1)
 
     onehot_labels = False if config["dataset"]["gt_mode"] == "mOH" else True
-    metric = DiceScore() if n_classes == 1 else MulticlassDice(n_classes=n_classes, onehot_labels=onehot_labels)
+    metric = DiceScore() if n_classes == 1 else MulticlassDice(n_classes=n_classes,
+                                                               onehot_labels=onehot_labels)
 
     # Initiate training for a length of checkpoint_step, then save a switch to another network;
     # Do until each network is trained for a total number of epochs;
     for checkpoint in range(0, epochs_total - checkpoint_step + 1, checkpoint_step):
         for idx in range(nets_number):
-            save_path = save_dir / (config["net_dir_name"] + f"_{idx}_{checkpoint + checkpoint_step}ep")
-            print(f"Training model {idx} from epoch {checkpoint} to {checkpoint + checkpoint_step}.")
+            save_path = save_dir / (config["net_dir_name"] +
+                                    f"_{idx}_{checkpoint + checkpoint_step}ep")
+            print(f"Training model {idx}" +
+                  f"from epoch {checkpoint} to {checkpoint + checkpoint_step}.")
             train(model=models[idx],
                 optimizer=optimizers[idx],
                 scheduler=schedulers[idx],
@@ -158,6 +166,6 @@ if __name__ == "__main__":
                 writer=writers[idx],
                 save_path=save_path,
                 validation_step=validation_step)
-            
+
     for writer in writers:
         writer.close()
