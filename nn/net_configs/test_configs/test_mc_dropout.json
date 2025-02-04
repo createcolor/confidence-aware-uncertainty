@@ -1,0 +1,12 @@
+{
+    "path2dataset": "/mnt/nuberg/datasets/medical_data/alvs_dataset_all",
+    "nets_dir": "/mnt/nuberg/datasets/medical_data/nets/MobileNet_small_10_10_80_meta_8",
+    "test_markup": "markup/test_dataset_10_10_80.json",
+    "answers_path": "results/mc_dropout_outputs", 
+    "alv_scores_path": "results/mc_dropout_scores",
+    "basic_net_name": "MobileNet_small_10_10_80_meta_8_400ep",
+    "number_of_nets": 10,
+    "number_of_inferences": 10,
+    "test_config": "nn/net_configs/test_config_classifier.json",
+    "train_config": "/mnt/nuberg/datasets/medical_data/nets/MobileNet_small_10_10_80_meta_8/config_MobileNet_small_10_10_80_meta_8.json"
+}
