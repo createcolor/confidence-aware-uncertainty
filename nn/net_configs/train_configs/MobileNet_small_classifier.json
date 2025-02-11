@@ -1,0 +1,75 @@
+{
+    "net_dir_name": "MobileNet_small_classifier_demo",
+    "architecture": "mobilenet_v3_small",
+    "device_type": "cuda:0",
+    "learn_from_scratch": true,
+    "choose_thr": false,
+    "epochs_total": 1000,
+    "epochs_step": 100,
+    "step2check_val_acc": 10,
+    
+    "nets_number": 10,
+    "learning rate": 0.00015,
+    "weight decay": 5e-05,
+    "batch_size": 16,
+    "train_part": 0.5,
+
+    "path2nets_dir": "./data/nets",
+
+    "use_lr_scheduler": true, 
+    "lr_scheduler": {"StepLR": {
+        "epochs_num_when_change": [0, 700],
+        "gammas": [0.9, 0.85],
+        "step_size": 25
+    }
+    },
+    "use_label_smoothing": false,
+    "loss_func": "BCELoss",
+    "dropout probability": 0.2,
+
+    "dataset_info": {
+        "img_side_size": 512,
+        "colorcode": "rgb"
+    },
+
+    "augmentations": {
+        "rotate": [
+            -180,
+            180
+        ],
+        "crop": {
+            "vertshift_range": [
+                -15,
+                15
+            ],
+            "horizshift_range": [
+                -15,
+                15
+            ],
+            "alv_radius_range": [
+                0.9,
+                1
+            ]
+        },
+        "noise": [
+            0.5,
+            0.0,
+            102
+        ],
+        "flip": 0.5,
+        "contrast": {
+            "probability": 0.25,
+            "min": 0.8,
+            "max": 1.3
+        },
+        "sharpen": {
+            "probability": 0.25,
+            "alpha": [0, 0.5],
+            "light": [0.8, 1.3]
+        },
+        "perspective": {
+            "probability": 0.4,
+            "scale": [0.01, 0.05]
+        }
+    }
+}
