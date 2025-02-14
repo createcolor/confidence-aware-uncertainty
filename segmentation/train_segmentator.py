@@ -153,7 +153,7 @@ if __name__ == "__main__":
         for idx in range(nets_number):
             save_path = save_dir / (config["net_dir_name"] +
                                     f"_{idx}_{checkpoint + checkpoint_step}ep")
-            print(f"Training model {idx}" +
+            print(f"Training model {idx} " +
                   f"from epoch {checkpoint} to {checkpoint + checkpoint_step}.")
             train(model=models[idx],
                   optimizer=optimizers[idx],

@@ -46,7 +46,7 @@ def train(model: torch.nn.Module,
     val_losses = []
     val_scores = []
 
-    log_template = ("Epoch {ep:03d}/{epochs:03d}, train loss: {t_loss:0.6f}," +
+    log_template = ("Epoch {ep:03d}/{epochs:03d}, train loss: {t_loss:0.6f}, " +
                     "val loss: {v_loss:0.6f}, val score {v_score:0.4f}")
 
     with tqdm(desc="epoch", total=epochs) as pbar_outer:
