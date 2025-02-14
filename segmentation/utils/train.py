@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
 from tqdm import tqdm
 
+
 def train(model: torch.nn.Module,
           optimizer: torch.optim.Optimizer,
           scheduler: torch.optim.lr_scheduler._LRScheduler | None,
@@ -12,11 +13,11 @@ def train(model: torch.nn.Module,
           epochs: int,
           data_tr: DataLoader,
           data_val: DataLoader,
-          device: torch.device | str='cpu',
-          writer: SummaryWriter | None=None,
-          pretrained_epochs: int=0,
-          save_path: Path | None=None,
-          validation_step: int=1):
+          device: torch.device | str = 'cpu',
+          writer: SummaryWriter | None = None,
+          pretrained_epochs: int = 0,
+          save_path: Path | None = None,
+          validation_step: int = 1):
     """
     Trains a model for specified number of epochs. Validates the model at set intervals.
     After each epoch prints the value of the loss function on train and validations sets,
@@ -34,9 +35,9 @@ def train(model: torch.nn.Module,
         data_tr (torch.utils.data.DataLoader): data loader for training data.
         data_val (torch.utils.data.DataLoader): data loader for validation data.
         device (torch.device or str): device to use for computation.
-        writer (tensorboardX.SummaryWriter or None): summary writer for logging metrics 
+        writer (tensorboardX.SummaryWriter or None): summary writer for logging metrics
             to TensorBoard.
-        pretrained_epochs (int): number of epochs the model was previously trained for. 
+        pretrained_epochs (int): number of epochs the model was previously trained for.
             Only affects logging.
         save_path (Path or None): where to save the model parameters after training.
         validation_step (int): how often to perform validation.
@@ -97,8 +98,8 @@ def train(model: torch.nn.Module,
             pbar_outer.update(1)
 
             tqdm.write(
-                log_template.format(ep=pretrained_epochs + epoch + 1, 
-                                    epochs=pretrained_epochs + epochs, 
+                log_template.format(ep=pretrained_epochs + epoch + 1,
+                                    epochs=pretrained_epochs + epochs,
                                     t_loss=train_losses[-1],
                                     v_loss=val_losses[-1],
                                     v_score=val_scores[-1])

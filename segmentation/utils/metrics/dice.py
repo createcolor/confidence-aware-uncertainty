@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class DiceScore(nn.Module):
     """
     Class for evaluating Dice score between single-class predictions and targets.
@@ -9,9 +10,9 @@ class DiceScore(nn.Module):
     Args:
         use_sigmoid (bool): whether to apply sigmoid to predictions or not.
         binarize (bool): whether to binarize predictions via a 0.5 threshold.
-        smooth (float): smoothing parameter in division. 
+        smooth (float): smoothing parameter in division.
     """
-    def __init__(self, use_sigmoid: bool=True, binarize: bool=True, smooth: float=1.) -> None:
+    def __init__(self, use_sigmoid: bool = True, binarize: bool = True, smooth: float = 1.) -> None:
         super(DiceScore, self).__init__()
         self.use_sigmoid = use_sigmoid
         self.binarize = binarize
@@ -35,15 +36,16 @@ class DiceScore(nn.Module):
         if self.binarize:
             inputs = inputs >= 0.5
 
-        #flatten label and prediction tensors
+        # Flatten label and prediction tensors
         inputs = inputs.reshape(-1)
         targets = targets.reshape(-1)
-        
-        intersection = (inputs * targets).sum()                            
-        dice = (2. * intersection + self.smooth) / (inputs.sum() + targets.sum() + self.smooth)  
-        
+
+        intersection = (inputs * targets).sum()
+        dice = (2. * intersection + self.smooth) / (inputs.sum() + targets.sum() + self.smooth)
+
         return dice
-    
+
+
 class MulticlassDice(nn.Module):
     """
     Class for evaluating Dice score between multi-class predictions and targets.
@@ -51,15 +53,16 @@ class MulticlassDice(nn.Module):
 
     Args:
         n_classes (int): number of classes.
-        reduction (str or None): if "mean", returns average Dice score over all classes; 
+        reduction (str or None): if "mean", returns average Dice score over all classes;
                                 if None, returns a list of Dice scores.
         onehot_labels (bool): whether to onehot-encode labels by class.
         use_softmax (bool): whether to apply softmax to predictions.
         binarize (bool): whether to onehot-encode predictions by class.
-        smooth (float): smoothing parameter in division. 
+        smooth (float): smoothing parameter in division.
     """
-    def __init__(self, n_classes: int | None=None, reduction: str | None="mean",
-                 onehot_labels: bool=True, use_softmax: bool=True, binarize: bool=True, smooth: float=1.):
+    def __init__(self, n_classes: int | None = None, reduction: str | None = "mean",
+                 onehot_labels: bool = True, use_softmax: bool = True,
+                 binarize: bool = True, smooth: float = 1.):
         super(MulticlassDice, self).__init__()
         self.classes = n_classes
         self.reduction = reduction
@@ -85,11 +88,11 @@ class MulticlassDice(nn.Module):
             inputs = F.softmax(inputs, dim=1)
 
         if self.binarize:
-            inputs = F.one_hot(torch.argmax(inputs, dim=1), num_classes=n_classes)
+            inputs = F.one_hot(torch.argmax(inputs, dim=1), num_classes=n_classes)  # pylint: disable=not-callable
             inputs = inputs.movedim(-1, -3)
 
         if self.onehot:
-            targets = F.one_hot(targets, num_classes=n_classes)
+            targets = F.one_hot(targets, num_classes=n_classes)  # pylint: disable=not-callable
             targets = targets.movedim(-1, -3)
 
         dice = []
@@ -100,9 +103,10 @@ class MulticlassDice(nn.Module):
             return torch.mean(torch.tensor(dice))
         elif self.reduction is None:
             return dice
-        
-def stacked_Dice(preds: torch.Tensor, labels: torch.Tensor, 
-                 binarize: bool=True, smooth: float=1.) -> torch.Tensor:
+
+
+def stacked_Dice(preds: torch.Tensor, labels: torch.Tensor,
+                 binarize: bool = True, smooth: float = 1.) -> torch.Tensor:
     """
     Calculates Dice score for multiple items, treating each element in the first tensor
     dim as a separate item.

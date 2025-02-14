@@ -9,20 +9,22 @@ import torch.utils.data
 from tqdm import tqdm
 from tensorboardX import SummaryWriter
 
-from utils.train import train # pylint: disable=import-error
-from utils.object_loader import (get_architecture, get_dataset, # pylint: disable=import-error
+from utils.train import train  # pylint: disable=import-error
+from utils.object_loader import (get_architecture, get_dataset,  # pylint: disable=import-error
                                  get_loss, get_optimizer, get_scheduler)
-from utils.metrics.dice import DiceScore, MulticlassDice # pylint: disable=import-error
+from utils.metrics.dice import DiceScore, MulticlassDice  # pylint: disable=import-error
+
 
 def parse_args():
     parser = argparse.ArgumentParser('Train a segmentator.')
 
-    parser.add_argument('-c', '--config', type=Path, 
+    parser.add_argument('-c', '--config', type=Path,
                         help="Path to train config .json file.",
-                        default="segmentation/configs/UNet_from_scratch.json")
+                        default="segmentation/configs/train_ensemble.json")
 
     parsed_args = parser.parse_args()
     return parsed_args
+
 
 if __name__ == "__main__":
     args = parse_args()
@@ -40,7 +42,7 @@ if __name__ == "__main__":
     # Load data;
     print("Loading data...")
     ds_dict = config["dataset"]
-    data = get_dataset(ds_dict["type"], dir=ds_dict["data_path"],
+    data = get_dataset(ds_dict["type"], ds_dir=ds_dict["data_path"],
                        gt=ds_dict["gt_mode"], params=ds_dict["params"])
 
     # Create save directories;
@@ -154,18 +156,18 @@ if __name__ == "__main__":
             print(f"Training model {idx}" +
                   f"from epoch {checkpoint} to {checkpoint + checkpoint_step}.")
             train(model=models[idx],
-                optimizer=optimizers[idx],
-                scheduler=schedulers[idx],
-                loss_fn=loss_fn,
-                metric=metric,
-                epochs=checkpoint_step,
-                pretrained_epochs=checkpoint,
-                data_tr=train_dls[idx],
-                data_val=val_dls[idx],
-                device=device,
-                writer=writers[idx],
-                save_path=save_path,
-                validation_step=validation_step)
+                  optimizer=optimizers[idx],
+                  scheduler=schedulers[idx],
+                  loss_fn=loss_fn,
+                  metric=metric,
+                  epochs=checkpoint_step,
+                  pretrained_epochs=checkpoint,
+                  data_tr=train_dls[idx],
+                  data_val=val_dls[idx],
+                  device=device,
+                  writer=writers[idx],
+                  save_path=save_path,
+                  validation_step=validation_step)
 
     for writer in writers:
         writer.close()
