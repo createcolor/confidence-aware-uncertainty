@@ -1,13 +1,14 @@
+from pathlib import Path
 import torch
 from torch.utils.data import DataLoader
 import numpy as np
-from pathlib import Path
 from tqdm import tqdm
 
-def evaluate_model(model_dir: Path, architecture: torch.nn.Module, 
-                   nets: int | list, epochs: int, 
-                   metric: torch.nn.Module, data_loader: DataLoader, 
-                   device: torch.device | str='cpu') -> tuple[list, dict]:
+
+def evaluate_model(model_dir: Path, architecture: torch.nn.Module,
+                   nets: int | list, epochs: int,
+                   metric: torch.nn.Module, data_loader: DataLoader,
+                   device: torch.device | str = 'cpu') -> tuple[list, dict]:
     """
     Evaluates an ensemble of models via the given metric.
 
@@ -50,15 +51,16 @@ def evaluate_model(model_dir: Path, architecture: torch.nn.Module,
         predictions.append(torch.stack(model_predictions))
         model_score = np.mean(list(scores[idx].values()), axis=0)
         print(f"Model {model_path.name} Dice score(s): {model_score}")
-    
+
     return predictions, scores
 
-def evaluate_abnn(model_dir: Path, architecture: torch.nn.Module, 
+
+def evaluate_abnn(model_dir: Path, architecture: torch.nn.Module,
                   nets: list | int, epochs: int,
-                  metric: torch.nn.Module, data_loader: DataLoader, 
-                  samples: int=10, device: torch.device | str='cpu') -> tuple[list, dict]:
+                  metric: torch.nn.Module, data_loader: DataLoader,
+                  samples: int = 10, device: torch.device | str = 'cpu') -> tuple[list, dict]:
     """
-    Evaluates an ABNN ensemble of models via the given metric. 
+    Evaluates an ABNN ensemble of models via the given metric.
     Predictions from each model are sampled multiple times, and the samples are averaged.
 
     Args:
@@ -102,5 +104,5 @@ def evaluate_abnn(model_dir: Path, architecture: torch.nn.Module,
         predictions.append(torch.stack(model_predictions))
         model_score = np.mean(list(scores[idx].values()))
         print(f"Model {model_path.name} Dice score: {model_score:.4f}")
-    
+
     return predictions, scores

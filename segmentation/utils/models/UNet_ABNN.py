@@ -1,13 +1,14 @@
 import torch
 import torch.nn as nn
 
-from utils.models.bnl import BNL
-from utils.models.UNet import Upsampling
+from utils.models.bnl import BNL  # pylint: disable=import-error
+from utils.models.UNet import Upsampling  # pylint: disable=import-error
+
 
 class ConvBlock(nn.Module):
     """
-    Convolutional block with a bayesian normalization layer: 
-        
+    Convolutional block with a bayesian normalization layer:
+
         [Conv2d >> BNL >> ReLU] x 2
 
     Args:
@@ -15,27 +16,28 @@ class ConvBlock(nn.Module):
         hid_channels (int): number of channels in a hidden layer.
         out_channels (int): number of output channels.
         kernel_size (int or tuple): size of the convolving kernel.
-        padding (int, tuple or str): padding added to all four sides of the input. 
+        padding (int, tuple or str): padding added to all four sides of the input.
     """
     def __init__(self, in_channels, hid_channels, out_channels, kernel_size=3, padding=1):
         super().__init__()
 
-        self.conv_block = nn.Sequential(*[nn.Conv2d(in_channels=in_channels, 
-                                                    out_channels=hid_channels, 
-                                                    kernel_size=kernel_size, 
+        self.conv_block = nn.Sequential(*[nn.Conv2d(in_channels=in_channels,
+                                                    out_channels=hid_channels,
+                                                    kernel_size=kernel_size,
                                                     padding=padding),
                                           BNL(hid_channels),
                                           nn.ReLU(),
-                                          nn.Conv2d(in_channels=hid_channels, 
-                                                    out_channels=out_channels, 
-                                                    kernel_size=kernel_size, 
+                                          nn.Conv2d(in_channels=hid_channels,
+                                                    out_channels=out_channels,
+                                                    kernel_size=kernel_size,
                                                     padding=padding),
                                           BNL(out_channels),
                                           nn.ReLU()])
-        
+
     def forward(self, x):
         return self.conv_block(x)
-    
+
+
 class UNet_Encoder(nn.Module):
     """
     Encoder part of the UNet with BNL blocks:
@@ -56,9 +58,9 @@ class UNet_Encoder(nn.Module):
         self.conv2 = ConvBlock(in_channels=128, hid_channels=256, out_channels=256)
         self.conv3 = ConvBlock(in_channels=256, hid_channels=512, out_channels=512)
         self.conv4 = ConvBlock(in_channels=512, hid_channels=1024, out_channels=1024)
-        
+
         self.pooling = nn.MaxPool2d(kernel_size=2, stride=2)
-        
+
     def forward(self, x):
         e0 = self.conv0(x)
         e1 = self.conv1(self.pooling(e0))
@@ -68,7 +70,8 @@ class UNet_Encoder(nn.Module):
 
         encoder_outputs = [e0, e1, e2, e3]
         return e4, encoder_outputs
-    
+
+
 class UNet_Decoder(nn.Module):
     """
     Decoder part of the UNet with BNL blocks:
@@ -101,23 +104,24 @@ class UNet_Decoder(nn.Module):
 
     def forward(self, x, encoder_outputs):
         d0 = self.up0(x)
-        d0 = torch.cat([encoder_outputs[3], d0], dim = 1)
+        d0 = torch.cat([encoder_outputs[3], d0], dim=1)
         d0 = self.deconv0(d0)
 
         d1 = self.up1(d0)
-        d1 = torch.cat([encoder_outputs[2], d1], dim = 1)
+        d1 = torch.cat([encoder_outputs[2], d1], dim=1)
         d1 = self.deconv1(d1)
 
         d2 = self.up2(d1)
-        d2 = torch.cat([encoder_outputs[1], d2], dim = 1)
+        d2 = torch.cat([encoder_outputs[1], d2], dim=1)
         d2 = self.deconv2(d2)
 
         d3 = self.up3(d2)
-        d3 = torch.cat([encoder_outputs[0], d3], dim = 1)
+        d3 = torch.cat([encoder_outputs[0], d3], dim=1)
         d3 = self.deconv3(d3)
 
         return self.final(d3)
-    
+
+
 class UNet_ABNN(nn.Module):
     """
     UNet architecture with BNL blocks consisting of a UNet encoder and UNet decoder
@@ -132,11 +136,12 @@ class UNet_ABNN(nn.Module):
 
         self.encoder = UNet_Encoder(init_channels=n_channels)
         self.decoder = UNet_Decoder(num_classes=n_classes)
-        
+
     def forward(self, x):
         x, encoder_outputs = self.encoder(x)
         return self.decoder(x, encoder_outputs)
-    
+
+
 if __name__ == "__main__":
-    model = UNet_ABNN(init_channels=1)
+    model = UNet_ABNN(n_channels=1)
     print(sum(p.numel() for p in model.parameters() if p.requires_grad))

@@ -4,14 +4,15 @@ import torch
 import torch.utils
 import torch.utils.data
 
-from utils.dataset import LIDCDataset, RIGADataset
-from utils.models.UNet import UNet
-from utils.SGLD import SGLD
-from utils.metrics.SVLS_2D import CELossWithSVLS_2D, CELossWithOH_2D
+from utils.dataset import LIDCDataset, RIGADataset  # pylint: disable=import-error
+from utils.models.UNet import UNet  # pylint: disable=import-error
+from utils.SGLD import SGLD  # pylint: disable=import-error
+from utils.metrics.SVLS_2D import CELossWithSVLS_2D, CELossWithOH_2D  # pylint: disable=import-error
 
-def get_loss(loss_fn: str, n_classes: int, device: torch.device='cpu') -> torch.nn.Module:
+
+def get_loss(loss_fn: str, n_classes: int, device: torch.device = 'cpu') -> torch.nn.Module:
     """
-    Returns a loss function object given its name. If the desired loss is not one of 
+    Returns a loss function object given its name. If the desired loss is not one of
     the pre-written classes, this function looks for a potential match in the torch.nn module.
 
     Args:
@@ -34,9 +35,10 @@ def get_loss(loss_fn: str, n_classes: int, device: torch.device='cpu') -> torch.
 
     return loss_fn
 
+
 def get_dataset(dataset: str, ds_dir: Path, gt: str, params: dict) -> torch.utils.data.DataLoader:
     """
-    Returns a dataset class object given its name and parameters. 
+    Returns a dataset class object given its name and parameters.
 
     Args:
         dataset (str): name of a dataset.
@@ -53,12 +55,13 @@ def get_dataset(dataset: str, ds_dir: Path, gt: str, params: dict) -> torch.util
         data = RIGADataset(data_dir=ds_dir, ground_truth=gt, **params)
     else:
         raise ValueError(f"Dataset {dataset} is not supported.")
-    
+
     return data
+
 
 def get_architecture(architecture: str) -> type[torch.nn.Module]:
     """
-    Returns an architecture class given its name. 
+    Returns an architecture class given its name.
 
     Args:
         architecture (str): name of an architecture.
@@ -71,14 +74,15 @@ def get_architecture(architecture: str) -> type[torch.nn.Module]:
         raise ValueError(f"Model architecture {architecture} is not supported.")
     return architectures[architecture]
 
+
 def get_optimizer(optimizer: dict) -> tuple[type[torch.optim.Optimizer], dict]:
     """
     Returns an optimizer class and parameters given its configuration dictionary.
-    If the desired optimizer is not one of the pre-written classes, 
-    this function looks for a potential match in the torch.optim module. 
+    If the desired optimizer is not one of the pre-written classes,
+    this function looks for a potential match in the torch.optim module.
 
     Args:
-        optimizer (dict): configuration dictionary of an optimizer 
+        optimizer (dict): configuration dictionary of an optimizer
                           containing its name and parameters.
 
     Returns:
@@ -93,14 +97,15 @@ def get_optimizer(optimizer: dict) -> tuple[type[torch.optim.Optimizer], dict]:
         optimizer = getattr(sys.modules["torch.optim"], optimizer_type, None)
         if optimizer is None:
             raise ValueError(f"Optimizer {optimizer_type} is not supported.")
-        
+
     return optimizer, optimizer_params
 
-def get_scheduler(scheduler: str, last_epoch: int, 
+
+def get_scheduler(scheduler: str, last_epoch: int,
                   params: dict) -> tuple[type[torch.optim.lr_scheduler._LRScheduler], dict]:
     """
-    Returns a scheduler class and parameters given its 
-    name, last epoch and a dictionary of parameters. 
+    Returns a scheduler class and parameters given its
+    name, last epoch and a dictionary of parameters.
 
     Args:
         scheduler (str): name of a scheduler.
@@ -124,6 +129,7 @@ def get_scheduler(scheduler: str, last_epoch: int,
 
     return scheduler_type, scheduler_params
 
+
 def flatten_labels(dataset: str, path: Path | str, expert_id: int) -> torch.Tensor:
     """
     Loads labels from a dataset and flattens last two dimensions.
@@ -144,13 +150,14 @@ def flatten_labels(dataset: str, path: Path | str, expert_id: int) -> torch.Tens
             "augment": False,
         }
         ds = RIGADataset(**params)
-
     elif dataset == "lidc":
         params = {
             "data_dir": Path(path),
             "gt_mode": f"expert{expert_id}",
         }
         ds = LIDCDataset(**params)
+    else:
+        raise ValueError(f"Dataset {dataset} is not supported.")
 
     labels = []
 

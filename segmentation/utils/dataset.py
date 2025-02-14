@@ -1,18 +1,20 @@
+from pathlib import Path
+import pickle
+import random
 import numpy as np
 import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset
 from torchvision.transforms import Resize
-from pathlib import Path
-import pickle
 import matplotlib.pyplot as plt
-import random
 from tqdm import tqdm
 
-from utils.metrics.SVLS_2D import get_svls_filter_2d
+from utils.metrics.SVLS_2D import get_svls_filter_2d  # pylint: disable=import-error
+
 
 class LIDCDataset(Dataset):
-    def __init__(self, data_dir: Path, transform=None, gt_mode: str='expert1', augment_prob: float=0., keep_names=False):
+    def __init__(self, data_dir: Path, transform=None, gt_mode: str = 'expert1',
+                 augment_prob: float = 0., keep_names: bool = False):
         self.data_dir = data_dir
         self.transform = transform
         self.gt_mode = gt_mode
@@ -27,7 +29,7 @@ class LIDCDataset(Dataset):
 
     def __len__(self):
         return len(self.data)
-    
+
     def __getkeyitem__(self, key):
         obj = self.data[key]
         image = obj["image"]
@@ -53,15 +55,15 @@ class LIDCDataset(Dataset):
         if self.transform:
             image = self.transform(image)
             labels = self.transform(labels)
-        
+
         image = torch.unsqueeze(torch.Tensor(image), 0)
-        if not self.gt_mode == "mSVLS":
+        if self.gt_mode != "mSVLS":
             labels = torch.unsqueeze(torch.Tensor(labels), 0)
 
         if random.random() < self.augment_prob:
             transpose = random.sample(range(1, image.dim()), 2)
             flip = random.randint(2, image.dim() - 1)
-            
+
             image = image.transpose(*transpose).flip(flip)
             labels = labels.transpose(*transpose).flip(flip)
 
@@ -75,13 +77,15 @@ class LIDCDataset(Dataset):
     def __getitem__(self, idx):
         key = self.data_idx[idx]
         return self.__getkeyitem__(key)
-    
+
     def get_key_list(self):
         return self.data_idx
-    
+
+
 class RIGADataset(Dataset):
-    def __init__(self, data_dir: Path, ground_truth: str, sets: list=['BinRushed', 'Magrabia', 'MESSIDOR'], 
-                 augment: bool=True, keep_names: bool=False):
+    def __init__(self, data_dir: Path, ground_truth: str,
+                 sets: list | tuple = ('BinRushed', 'Magrabia', 'MESSIDOR'),
+                 augment: bool = True, keep_names: bool = False):
         self.data_dir = data_dir
         self.ground_truth = ground_truth
         self.sets = sets
@@ -125,12 +129,13 @@ class RIGADataset(Dataset):
                                 keys.append(file)
 
         return images, labels, keys
-    
-    def _augment_data(self, image: torch.Tensor, label: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        id = image.dim()
-        transpose = random.sample(range(id - 2, id), 2)
-        flip = random.randint(id - 2, id - 1)
-        
+
+    def _augment_data(self, image: torch.Tensor,
+                      label: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        idim = image.dim()
+        transpose = random.sample(range(idim - 2, idim), 2)
+        flip = random.randint(idim - 2, idim - 1)
+
         image = image.transpose(*transpose).flip(flip)
         label = label.transpose(*transpose).flip(flip)
 
@@ -141,21 +146,22 @@ class RIGADataset(Dataset):
         for expert in label:
             expert = torch.tensor(np.rollaxis(expert, -1, 0)).long()
             expert = expert.sum(dim=0, keepdim=True)
-            expert[expert == 450], expert[expert == 765] = 1, 2 # Convert [0, 150, 255] to [0, 1, 2]
+            expert[expert == 450], expert[expert == 765] = 1, 2  # Convert [0, 150, 255] to [0, 1, 2]
             label_t.append(self.resize(expert))
 
         if self.ground_truth[:-1] == "expert":
             return label_t[int(self.ground_truth[-1])]
         elif self.ground_truth == "mOH":
             label = torch.stack(label_t).squeeze()
-            label = F.one_hot(label)
+            label = F.one_hot(label)  # pylint: disable=not-callable
             label = label.movedim(-1, -3).float()
             return torch.mean(label, dim=0)
 
     def __len__(self) -> int:
         return len(self.images)
-    
-    def __getitem__(self, index) -> tuple[torch.Tensor, torch.Tensor] | tuple[torch.Tensor, torch.Tensor, str]:
+
+    def __getitem__(self, index) -> (tuple[torch.Tensor, torch.Tensor] |
+                                     tuple[torch.Tensor, torch.Tensor, str]):
         image, label = self.images[index], self.labels[index]
         image = np.rollaxis(image, -1, 0)
         image = self.resize(torch.tensor(image).float())
@@ -165,5 +171,6 @@ class RIGADataset(Dataset):
         if self.augment:
             image, label = self._augment_data(image, label)
         if self.names:
-            return image, torch.squeeze(label), str(self.keys[index]).replace(str(self.data_dir), "")
+            return (image, torch.squeeze(label),
+                    str(self.keys[index]).replace(str(self.data_dir), ""))
         return image, torch.squeeze(label)

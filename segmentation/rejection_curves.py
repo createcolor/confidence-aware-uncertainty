@@ -8,9 +8,10 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-from utils.uncertainty import load_mcmc, multiclass_uncertainty # pylint: disable=import-error
-from utils.metrics.dice import stacked_Dice # pylint: disable=import-error
-from utils.object_loader import flatten_labels # pylint: disable=import-error
+from utils.uncertainty import load_mcmc, multiclass_uncertainty  # pylint: disable=import-error
+from utils.metrics.dice import stacked_Dice  # pylint: disable=import-error
+from utils.object_loader import flatten_labels  # pylint: disable=import-error
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -24,6 +25,7 @@ def parse_args():
                         help="Path to save uncertainties.")
 
     return parser.parse_args()
+
 
 if __name__ == "__main__":
     args = parse_args()

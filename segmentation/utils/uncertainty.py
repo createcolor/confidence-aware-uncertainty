@@ -1,5 +1,6 @@
-import torch
 from pathlib import Path
+import torch
+
 
 def load_mcmc(path: Path | str, step_size: int, total_epochs: int) -> torch.Tensor:
     """
@@ -11,7 +12,7 @@ def load_mcmc(path: Path | str, step_size: int, total_epochs: int) -> torch.Tens
         total_epochs (int): number of epochs the model was trained for.
 
     Returns:
-        torch.Tensor: a tensor of shape (num. nets, num. checkpoints, num. samples, 
+        torch.Tensor: a tensor of shape (num. nets, num. checkpoints, num. samples,
                                          num. classes, height, width)
     """
     epoch_preds = []
@@ -22,7 +23,8 @@ def load_mcmc(path: Path | str, step_size: int, total_epochs: int) -> torch.Tens
     epoch_preds = torch.movedim(torch.stack(epoch_preds), 0, 1)
     return epoch_preds
 
-def calculate_uncertainty(preds: torch.Tensor, method: str | None="var") -> torch.Tensor:
+
+def calculate_uncertainty(preds: torch.Tensor, method: str | None = "var") -> torch.Tensor:
     """
     Calculates uncertainty of predictions.
 
@@ -57,10 +59,11 @@ def calculate_uncertainty(preds: torch.Tensor, method: str | None="var") -> torc
     else:
         raise ValueError(f"Method {method} is not supported.")
 
-def tv_uncertainty(preds: torch.Tensor | None, 
-                   expert_preds: torch.Tensor | None=None, 
-                   method: str | None='var',
-                   expert_method: str | None=None) -> torch.Tensor:
+
+def tv_uncertainty(preds: torch.Tensor | None,
+                   expert_preds: torch.Tensor | None = None,
+                   method: str | None = 'var',
+                   expert_method: str | None = None) -> torch.Tensor:
     """
     Calculates uncertainty from two sources as given by law of total variance.
     The epistemic component is calculated from preds and the aleatoric component is
@@ -82,7 +85,7 @@ def tv_uncertainty(preds: torch.Tensor | None,
         method = None
     if expert_method in ('none', 'None'):
         expert_method = None
-    
+
     assert (preds is not None) or (expert_preds is not None), \
         "Either preds or expert_preds has to be not None!"
     assert (method is None) or (preds is not None), \
@@ -104,10 +107,13 @@ def tv_uncertainty(preds: torch.Tensor | None,
 
     return unc_ens + unc_exp
 
-def multiclass_uncertainty(n_classes: int, preds: torch.Tensor | None, expert_preds: torch.Tensor | None=None,
-                           method: str | None='var', expert_method: str | None=None) -> torch.Tensor:
+
+def multiclass_uncertainty(n_classes: int, preds: torch.Tensor | None,
+                           expert_preds: torch.Tensor | None = None,
+                           method: str | None = 'var',
+                           expert_method: str | None = None) -> torch.Tensor:
     """
-    Calculate agregate uncetainty from multiple classes. For this, multiple instances of 
+    Calculate agregate uncetainty from multiple classes. For this, multiple instances of
     tv_uncertainty are called.
 
     Args:
@@ -118,7 +124,8 @@ def multiclass_uncertainty(n_classes: int, preds: torch.Tensor | None, expert_pr
         expert_method (str | None): method by which the aleatoric uncertainty is to be calculated.
 
     Returns:
-        torch.Tensor: tensor containing the uncertainty map of predictions combined from multiple classes.
+        torch.Tensor: tensor containing the uncertainty map of predictions
+            combined from multiple classes.
     """
     if n_classes == 1:
         class_preds = None if preds is None else preds.float()
@@ -129,6 +136,7 @@ def multiclass_uncertainty(n_classes: int, preds: torch.Tensor | None, expert_pr
     for i in range(n_classes):
         class_preds = None if preds is None else preds[..., i, :].float()
         class_exps = None if expert_preds is None else expert_preds[..., i, :].float()
-        uncs.append(tv_uncertainty(class_preds, class_exps, method=method, expert_method=expert_method))
-    
+        uncs.append(tv_uncertainty(class_preds, class_exps, method=method,
+                                   expert_method=expert_method))
+
     return torch.sum(torch.stack(uncs), dim=0)

@@ -1,31 +1,32 @@
-import torch
-import numpy as np
-from torch.utils.data import DataLoader
 import os
 import json
 import argparse
 from pathlib import Path
-from tqdm import tqdm
+import torch
+import numpy as np
+from torch.utils.data import DataLoader
 
-from utils.eval import evaluate_abnn
-from utils.object_loader import get_dataset
-from utils.models.UNet_ABNN import UNet_ABNN
-from utils.metrics.dice import DiceScore, MulticlassDice
+from utils.eval import evaluate_abnn  # pylint: disable=import-error
+from utils.object_loader import get_dataset  # pylint: disable=import-error
+from utils.models.UNet_ABNN import UNet_ABNN  # pylint: disable=import-error
+from utils.metrics.dice import DiceScore, MulticlassDice  # pylint: disable=import-error
+
 
 def parse_args():
     parser = argparse.ArgumentParser('Test an ABNN segmentator.')
-    
+
     parser.add_argument('-c', '--config', type=Path,
                         default=Path("configs/test_abnn.json"),
                         help="Path to test config.")
-    
-    args = parser.parse_args()
-    return args
+
+    parsed_args = parser.parse_args()
+    return parsed_args
+
 
 if __name__ == "__main__":
     args = parse_args()
 
-    with open(args.config, 'r') as config_file:
+    with open(args.config, 'r', encoding='utf-8') as config_file:
         config = json.load(config_file)
 
     device = torch.device(config.get("device", 'cpu') if torch.cuda.is_available() else 'cpu')
@@ -34,7 +35,8 @@ if __name__ == "__main__":
     # Load data;
     print("Loading data...")
     ds_dict = config["dataset"]
-    ds = get_dataset(ds_dict["type"], dir=ds_dict["data_path"], gt=ds_dict["gt_mode"], params=ds_dict["params"])
+    ds = get_dataset(ds_dict["type"], ds_dir=ds_dict["data_path"],
+                     gt=ds_dict["gt_mode"], params=ds_dict["params"])
     dl = DataLoader(ds, batch_size=1, shuffle=False)
 
     # Create architecture instance;
@@ -44,13 +46,13 @@ if __name__ == "__main__":
     metric = DiceScore() if n_classes == 1 else MulticlassDice(n_classes=n_classes, reduction=None)
 
     predictions, scores = evaluate_abnn(model_dir=model_dir,
-                                         architecture=architecture,
-                                         nets=config["nets"],
-                                         epochs=config["epochs"],
-                                         metric=metric,
-                                         data_loader=dl,
-                                         samples=config.get("samples", 10),
-                                         device=device)
+                                        architecture=architecture,
+                                        nets=config["nets"],
+                                        epochs=config["epochs"],
+                                        metric=metric,
+                                        data_loader=dl,
+                                        samples=config.get("samples", 10),
+                                        device=device)
 
     save_path = config.get("save_path", None)
 
@@ -64,9 +66,10 @@ if __name__ == "__main__":
         with open(save_path / "predictions.pt", 'wb') as f:
             torch.save(predictions, f)
 
-        str_scores = {str(model): {key: str(value) for (key, value) in values.items()} for (model, values) in scores.items()}
-        with open(save_path / "Dice.json", 'w') as f:
+        str_scores = {str(model): {key: str(value) for (key, value) in values.items()}
+                      for (model, values) in scores.items()}
+        with open(save_path / "Dice.json", 'w', encoding='utf-8') as f:
             json.dump(str_scores, f, ensure_ascii=False, indent=4)
-    
+
     scores = np.array([np.mean(list(model_scores.values())) for model_scores in scores.values()])
     print(f"Average Dice score: {scores.mean():.4f} \u00B1 {scores.std():.4f}")
