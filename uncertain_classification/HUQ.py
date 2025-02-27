@@ -1,17 +1,17 @@
 import argparse
 from pathlib import Path
 import json
+from bisect import bisect
 import numpy as np
 from uncertain_classification.calculate_ensemble_uncertainties import \
                     convert_alvs_unc2unc_alvs, convert_unc_alvs2alvs_unc
-from bisect import bisect
 from uncertain_classification.DDU import DDU
 
 
 def load_features(path2features, nets_outputs, net_id):
-    with open(path2features, "r") as f:
+    with open(path2features, "r", encoding='utf-8') as f:
         features_per_alvs_dict = json.load(f)
-    
+
     train_features_per_class = {}
     features = None
     for alv_name,  alv_features in features_per_alvs_dict.items():
@@ -32,37 +32,38 @@ def load_features(path2features, nets_outputs, net_id):
 
 def HUQ(args):
     def prepare_uncertainties(path2uncs):
-        with open(path2uncs, "r") as f:
+        with open(path2uncs, "r", encoding='utf-8') as f:
             uncs = json.load(f)
-        
+
         uncs_list = []
         for unc, alvs_list in uncs.items():
             uncs_list += [float(unc) for _ in range(len(alvs_list))]
 
         return sorted(uncs_list)
-    
+
     def get_rank(uncs_list, cur_unc):
         cur_unc = float(cur_unc)
         rank = bisect(uncs_list, cur_unc)
-        
+
         for unc in uncs_list[:rank - 1]:
             if unc == cur_unc:
                 rank -= 0.5
         return int(rank)
-    
-    def get_huq_uncs(aleatorics, epistemics, aleatoric_test, epistemic_test_alv_uncs, 
+
+    def get_huq_uncs(aleatorics, epistemics, aleatoric_test, epistemic_test_alv_uncs,
                      path2save_huq_uncs, alpha=0.5):
         huq_alvs_unc_dict = {}
-        for unc, alv_names in aleatoric_test.items(): 
+        for unc, alv_names in aleatoric_test.items():
             rank_aleatoric = get_rank(aleatorics, unc) / (len(epistemic_test_alv_uncs) + 1)
 
             for alv_name in alv_names:
-                rank_epistemic = get_rank(epistemics, epistemic_test_alv_uncs[alv_name]) / (len(epistemic_test_alv_uncs) + 1)
+                rank_epistemic = (get_rank(epistemics, epistemic_test_alv_uncs[alv_name])
+                                  / (len(epistemic_test_alv_uncs) + 1))
                 huq_alvs_unc_dict[alv_name] = alpha * rank_aleatoric + (1-alpha) * rank_epistemic
 
         huq_unc_alvs_dict = convert_alvs_unc2unc_alvs(huq_alvs_unc_dict)
 
-        with open(path2save_huq_uncs, "w") as f:
+        with open(path2save_huq_uncs, "w", encoding='utf-8') as f:
             json.dump(huq_unc_alvs_dict, f, indent=4)
 
     net_ids = args.test_config["net_ids"]
@@ -70,13 +71,15 @@ def HUQ(args):
 
     for net_id in net_ids:
         path2aleatoric_test = f"{args.path2ddu_outputs}/per-net_entropies_test_{net_id}.json"
-        path2epistemic_test = f"{args.path2ddu_outputs}/per-net_epistemic_{args.pca_components_num}PCAcomps_test_{net_id}.json"
+        path2epistemic_test = (f"{args.path2ddu_outputs}/per-net_epistemic_"
+                               f"{args.pca_components_num}PCAcomps_test_{net_id}.json")
         path2aleatoric_val = f"{args.path2ddu_outputs}/per-net_entropies_val_{net_id}.json"
-        path2epistemic_val = f"{args.path2ddu_outputs}/per-net_epistemic_{args.pca_components_num}PCAcomps_val_{net_id}.json"
-        
-        with open(path2aleatoric_test, "r") as f:
+        path2epistemic_val = (f"{args.path2ddu_outputs}/per-net_epistemic_"
+                              f"{args.pca_components_num}PCAcomps_val_{net_id}.json")
+
+        with open(path2aleatoric_test, "r", encoding='utf-8') as f:
             aleatoric_test = json.load(f)
-        with open(path2epistemic_test, "r") as f:
+        with open(path2epistemic_test, "r", encoding='utf-8') as f:
             epistemic_test = json.load(f)
 
         epistemic_test_alv_uncs = convert_unc_alvs2alvs_unc(epistemic_test)
@@ -84,50 +87,50 @@ def HUQ(args):
         aleatorics = prepare_uncertainties(path2aleatoric_val)
         epistemics = prepare_uncertainties(path2epistemic_val)
 
-        get_huq_uncs(aleatorics, epistemics, aleatoric_test, epistemic_test_alv_uncs, 
-                    path2save_huq_uncs=f"{args.path2save_dir}/huq_alpha={round(args.alpha, 2)}_{net_id}.json", alpha=args.alpha)
-    
+        huq_save_path = f"{args.path2save_dir}/huq_alpha={round(args.alpha, 2)}_{net_id}.json"
+        get_huq_uncs(aleatorics, epistemics, aleatoric_test, epistemic_test_alv_uncs,
+                     path2save_huq_uncs=huq_save_path, alpha=args.alpha)
+
 
 def parse_args():
     parser = argparse.ArgumentParser("This file allows to calculate uncertainty using HUQ method.")
-    parser.add_argument('-ctest', '--path2test_config', default=Path('nn/net_configs/test_config_classifier.json'),
-        help='configuration file')
-    
+    parser.add_argument('-ctest', '--path2test_config',
+                        default=Path('nn/net_configs/test_configs/test_config_classifier.json'),
+                        help='configuration file')
+
     parser.add_argument('-pca', '--pca_components_num', default=10, type=int,
-        help='the number of PCA components')
-    
+                        help='the number of PCA components')
+
     parser.add_argument('-s', '--path2save_dir', type=Path, default=Path('results/huq'),
-        help='Path to the dir where uncertainties and other output files should be saved.')
-    
+                        help=('Path to the dir where uncertainties '
+                              'and other output files should be saved.'))
+
     parser.add_argument('-ddu', '--path2ddu_outputs', type=Path, default=Path('results/ddu'),
-        help='Path to the directory with DDU outputs.')
-    
-    parser.add_argument('-otrain', '--path2outputs_train', type=Path, 
-        default=Path('nn/outputs/MobileNet_small_10_10_80_meta_8_400ep_outputs_train_val.json'),
-        help="Path to the net's outputs on train dataset.")
-    
-    parser.add_argument('-a', '--alpha', type=float, 
-        default=0.5, help="Paramether of weighted sum of two uncertainties.")
-    
-    args = parser.parse_args()
+                        help='Path to the directory with DDU outputs.')
 
-    with open(args.path2test_config, "r") as config_file:
-        args.test_config = json.load(config_file)
+    parser.add_argument('-otrain', '--path2outputs_train', type=Path,
+                        default=Path('nn/outputs/MobileNet_small_10_10_80_meta_8_'
+                                     '400ep_outputs_train_val.json'),
+                        help="Path to the net's outputs on train dataset.")
 
-    return args
+    parser.add_argument('-a', '--alpha', type=float, default=0.5,
+                        help="Paramether of weighted sum of two uncertainties.")
+
+    parsed_args = parser.parse_args()
+
+    with open(parsed_args.path2test_config, "r", encoding='utf-8') as config_file:
+        parsed_args.test_config = json.load(config_file)
+
+    return parsed_args
 
 
 if __name__ == "__main__":
     args = parse_args()
 
     print("Running DDU on validaion:")
-    DDU(args.test_config, args.path2ddu_outputs, args.path2outputs_train, 
-        test_on_val_data=True, calc_epistemic=True, calc_aleatoric=True, 
+    DDU(args.test_config, args.path2ddu_outputs, args.path2outputs_train,
+        test_on_val_data=True, calc_epistemic=True, calc_aleatoric=True,
         n_components=args.pca_components_num, test_set='val')
-   
+
     print("Running HUQ:")
     HUQ(args)
-
-    
-
-   

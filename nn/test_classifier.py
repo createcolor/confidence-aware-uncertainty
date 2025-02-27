@@ -1,23 +1,18 @@
 import json
 from pathlib import Path
-import numpy as np
-
-from typing import Dict, List
-
-import json
-import cv2
 import argparse
-
+from typing import Dict
+import numpy as np
+import cv2
 from sklearn import metrics
 import torch
 from tqdm import tqdm
 
-from nn.nn_utils import get_datasetloader, load_markup, \
-                     get_net_architecture, check_path_existence
+from nn.nn_utils import (get_datasetloader, load_markup,  # pylint: disable=import-error
+                         get_net_architecture, check_path_existence)
 
 
 def get_testloader(test_config):
-    
     path2test_markup = test_config["path2test_markup"]
     path2dataset = test_config["path2dataset"]
     check_path_existence(path2dataset, Path(
@@ -35,13 +30,14 @@ def get_testloader(test_config):
 
     return testloader
 
+
 def load_net(net_id, device, test_config):
     net_name = f"{test_config['nets_names']}_{test_config['epochs']}ep_{net_id}"
     reagents_num = 13 if "meta" in test_config["architecture"] else 0
     net = get_net_architecture(test_config["architecture"])(
         reagents_num=reagents_num)
     net.load_state_dict(torch.load(Path(test_config["path2nets_dir"], map_location=device) /
-                                    f"{test_config['nets_names']}/{net_name}", map_location=device))
+                                   f"{test_config['nets_names']}/{net_name}", map_location=device))
     net.to(device)
     net.eval()
     return net
@@ -51,7 +47,7 @@ def run_net(device, net, testloader, metalearning_mode: bool = False):
     '''
     Get the net's outputs.
     '''
-    
+
     net_outputs = {}
     net.to(device)
     net.eval()
@@ -62,18 +58,19 @@ def run_net(device, net, testloader, metalearning_mode: bool = False):
 
             meta_reagent = data['meta_reagent_type'].to(
                 device) if metalearning_mode else None
-            
+
             output = net(img, meta_reagent)
             output = output.cpu().detach().numpy()[..., 0]
             net_outputs[name] = output[0]
 
     return net_outputs
 
-def run_net_with_true_lebels(device, net, testloader, thr = 0.5, metalearning_mode: bool = False):
+
+def run_net_with_true_lebels(device, net, testloader, thr=0.5, metalearning_mode: bool = False):
     '''
     Get the net's outputs with true labels.
     '''
-    
+
     y_true = []
     y_pred = []
     net.to(device)
@@ -81,11 +78,11 @@ def run_net_with_true_lebels(device, net, testloader, thr = 0.5, metalearning_mo
 
     with torch.no_grad():
         for data in testloader:
-            img, name, labels = data['image'].to(device).float(), data['name'][0], data['agg_type']
+            img, _, labels = data['image'].to(device).float(), data['name'][0], data['agg_type']
 
             meta_reagent = data['meta_reagent_type'].to(
                 device) if metalearning_mode else None
-            
+
             if metalearning_mode:
                 output = net(img, meta_reagent)
             else:
@@ -95,18 +92,18 @@ def run_net_with_true_lebels(device, net, testloader, thr = 0.5, metalearning_mo
 
             cur_pred = np.where(output >= thr, 1, 0)
             y_pred += list(cur_pred)
-            
+
             labels = labels.cpu().detach().numpy().astype(int)
             y_true += list(labels)
-            
 
     return y_pred, y_true
 
 
+# remove
 def find_best_thr(device, net, valloader, val_markup, print_thr=True, metalearning_mode=False):
 
     net_outputs_dict = run_net(device, net, valloader, metalearning_mode)
-    
+
     gt_labels, predicted_outputs = [], []
     for alv_name, output in net_outputs_dict.items():
         predicted_outputs.append(output)
@@ -122,16 +119,17 @@ def find_best_thr(device, net, valloader, val_markup, print_thr=True, metalearni
 
     indexes = np.argwhere(accuracy == np.amax(accuracy)).flatten().tolist()
     index = indexes[len(indexes) // 2]
-    thresholdOpt = thresholds[index].round(4)
-    accOpt = round(accuracy[index], 3)
+    threshold_opt = thresholds[index].round(4)
+    acc_opt = round(accuracy[index], 3)
     if print_thr:
-        print(f"\nBest Threshold: {thresholdOpt}")
+        print(f"\nBest Threshold: {threshold_opt}")
 
-    return thresholdOpt, accOpt
+    return threshold_opt, acc_opt
+
 
 def prepare2run_net(net_id, test_config: Dict):
     '''
-    Runs the nets and saves their outputs (if path2save_nets_outputs provided) 
+    Runs the nets and saves their outputs (if path2save_nets_outputs provided)
     and lists of misclassified alveoluses names (if path2save_misclas_alvs is provided).
     '''
     testloader = get_testloader(test_config)
@@ -146,7 +144,7 @@ def prepare2run_net(net_id, test_config: Dict):
 
 def test_nets(test_config: Dict, testloader: torch.utils.data.DataLoader = None):
     '''
-    Runs the nets and saves their outputs (if path2save_nets_outputs provided) 
+    Runs the nets and saves their outputs (if path2save_nets_outputs provided)
     and lists of misclassified alveoluses names (if path2save_misclas_alvs is provided).
     '''
     net_ids = test_config["net_ids"]
@@ -160,17 +158,19 @@ def test_nets(test_config: Dict, testloader: torch.utils.data.DataLoader = None)
     for net_id in net_ids:
         print(f"Running net #{net_id}:")
         net = load_net(net_id, device, test_config)
-        
-        net_outputs = run_net(device, net, testloader, metalearning_mode=("meta" in test_config["architecture"]))
+
+        net_outputs = run_net(device, net, testloader,
+                              metalearning_mode="meta" in test_config["architecture"])
 
         nets_outputs[net_id] = {alv_name: str(
             output) for alv_name, output in net_outputs.items()}
 
     return nets_outputs
 
+
 def get_thresholds(test_config):
     net_ids = test_config["net_ids"]
-    
+
     nets_thresholds = {}
 
     device = torch.device(
@@ -180,14 +180,16 @@ def get_thresholds(test_config):
         net = load_net(net_id, device, test_config)
 
         if test_config["choose_thr"]:
-            markup_val_path = Path(
-                test_config["path2nets_dir"]) / f"{test_config['nets_names']}/{test_config['nets_names']}_{net_id}_markup_val.json"
+            markup_val_path = (Path(test_config["path2nets_dir"]) /
+                               f"{test_config['nets_names']}/"
+                               f"{test_config['nets_names']}_{net_id}_markup_val.json")
             val_markup = load_markup(markup_val_path)
 
             valloader = get_datasetloader(test_config, val_markup)
 
             thr, _ = find_best_thr(
-                device, net, valloader, val_markup, metalearning_mode=("meta" in test_config["architecture"]))
+                device, net, valloader, val_markup,
+                metalearning_mode="meta" in test_config["architecture"])
         else:
             assert "threshold" in test_config
             thr = test_config["threshold"]
@@ -199,7 +201,7 @@ def get_thresholds(test_config):
 
 def get_ensemble_mistakes(path2nets_outputs: Path, path2misclas_alvs: Path):
     '''
-    For an ensemble calculates misclassified alveoluses (an alv is misclassified 
+    For an ensemble calculates misclassified alveoluses (an alv is misclassified
     if it is misclassfied by not less than a half of the ensemble nets).
 
     Saves the calculated mistakes to the path2misclas_alvs.
@@ -226,12 +228,17 @@ def get_ensemble_mistakes(path2nets_outputs: Path, path2misclas_alvs: Path):
     with open(path2misclas_alvs, "w", encoding="utf-8") as f:
         json.dump(misclas_alvs, f, indent=4)
 
-def save_statistics(outputs_path, markup, missclass_path, stats_path, thr_path = None):
-    if thr_path is not None:
-        with open(thr_path, "r") as f:
-            thr_dict = json.load(f)
 
-    with open(outputs_path, "r") as f:
+def save_statistics(outputs_path, markup, missclass_path, stats_path, thr_path=None):
+    # WHY GIVE A DEFAULT VALUE JUST TO RAISE A VALUEERROR WHAT???
+    if thr_path is not None:
+        with open(thr_path, "r", encoding='utf-8') as f:
+            thr_dict = json.load(f)
+    else:
+        # raise ValueError(f"Path {thr_path} is None.")
+        thr_dict = dict()
+
+    with open(outputs_path, "r", encoding='utf-8') as f:
         outputs_dict = json.load(f)
 
     misclassified_alvs_dict = {}
@@ -239,7 +246,7 @@ def save_statistics(outputs_path, markup, missclass_path, stats_path, thr_path =
 
     for net_i in outputs_dict.keys():
         misclassified_alvs_dict[net_i] = []
-        thr = float(thr_dict[net_i]) if thr_path is not None else 0.5 
+        thr = float(thr_dict.get(net_i, 0.5)) if thr_path is not None else 0.5
 
         for img_i in outputs_dict[net_i]:
             gt = markup[img_i]['gt_result']
@@ -249,19 +256,21 @@ def save_statistics(outputs_path, markup, missclass_path, stats_path, thr_path =
             if output != gt:
                 misclassified_alvs_dict[net_i].append(img_i)
 
-        staistics[f"Accuracy {net_i}"] = 1 - (len(misclassified_alvs_dict[net_i]) / len(outputs_dict[net_i]))
-        
-    accs = [x for x in staistics.values()]
-    staistics[f"Accuracy mean"] = np.mean(accs)
-    staistics[f"Accuracy median"] = np.median(accs)
-    staistics[f"Accuracy min"] = np.min(accs)
-    staistics[f"Accuracy max"] = np.max(accs)
+        staistics[f"Accuracy {net_i}"] = 1 - (len(misclassified_alvs_dict[net_i])
+                                              / len(outputs_dict[net_i]))
 
-    with open(stats_path, "w") as f:
+    accs = [x for x in staistics.values()]
+    staistics["Accuracy mean"] = np.mean(accs)
+    staistics["Accuracy median"] = np.median(accs)
+    staistics["Accuracy min"] = np.min(accs)
+    staistics["Accuracy max"] = np.max(accs)
+
+    with open(stats_path, "w", encoding='utf-8') as f:
         json.dump(staistics, f, indent=4)
 
-    with open(missclass_path, "w") as f:
+    with open(missclass_path, "w", encoding='utf-8') as f:
         json.dump(misclassified_alvs_dict, f, indent=4)
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -270,13 +279,14 @@ def parse_args():
                         default=Path('nn/net_configs/test_config_classifier.json'))
     parser.add_argument('-o', '--output_dir', default=Path('nn/outputs'))
 
-    args = parser.parse_args()
+    parsed_args = parser.parse_args()
 
-    test_config = load_markup(args.test_config)
-    args.test_config = test_config
-    args.output_dir = Path(args.output_dir)
+    test_config = load_markup(parsed_args.test_config)
+    parsed_args.test_config = test_config
+    parsed_args.output_dir = Path(parsed_args.output_dir)
 
-    return args
+    return parsed_args
+
 
 if __name__ == "__main__":
     args = parse_args()
@@ -284,11 +294,11 @@ if __name__ == "__main__":
     if not args.output_dir.exists():
         args.output_dir.mkdir()
 
-    with open(args.test_config["path2test_markup"], "r", encoding="utf-8") as f:
-        test_markup = json.load(f)
+    with open(args.test_config["path2test_markup"], "r", encoding="utf-8") as file:
+        test_markup_loaded = json.load(file)
 
-    print(
-        f"Testing {args.test_config['nets_names']}_{args.test_config['epochs']}ep on {args.test_config['device_type']}")
+    print(f"Testing {args.test_config['nets_names']}_{args.test_config['epochs']}ep "
+          f"on {args.test_config['device_type']}")
 
     path2outputs = args.output_dir / \
         f"{args.test_config['nets_names']}_{args.test_config['epochs']}ep_outputs.json"
@@ -299,19 +309,19 @@ if __name__ == "__main__":
     path2save_statistics = args.output_dir / \
         f"{args.test_config['nets_names']}_stats.json"
 
-    nets_outputs = test_nets(args.test_config)
-    
-    if path2outputs is not None:
-        with open(path2outputs, "w", encoding="utf-8") as f:
-            json.dump(nets_outputs, f, indent=4)
+    nets_outputs_tested = test_nets(args.test_config)
 
-    nets_thresholds = get_thresholds(args.test_config)
+    if path2outputs is not None:
+        with open(path2outputs, "w", encoding="utf-8") as file:
+            json.dump(nets_outputs_tested, file, indent=4)
+
+    nets_thresholds_test = get_thresholds(args.test_config)
 
     if path2thresholds is not None:
-        with open(path2thresholds, "w", encoding="utf-8") as f:
-            json.dump(nets_thresholds, f, indent=4)
+        with open(path2thresholds, "w", encoding="utf-8") as file:
+            json.dump(nets_thresholds_test, file, indent=4)
 
-    save_statistics(path2outputs, 
-                    test_markup, 
-                    path2save_misclass, 
+    save_statistics(path2outputs,
+                    test_markup_loaded,
+                    path2save_misclass,
                     path2save_statistics)

@@ -1,10 +1,9 @@
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
-
-import torch
-from torch import nn, Tensor
+from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
 from itertools import repeat
 import collections
+import torch
+from torch import nn, Tensor
 
 
 def _make_ntuple(x: Any, n: int) -> Tuple[Any, ...]:
@@ -22,7 +21,6 @@ def _make_ntuple(x: Any, n: int) -> Tuple[Any, ...]:
     return tuple(repeat(x, n))
 
 
-
 def _make_divisible(v: float, divisor: int, min_value: Optional[int] = None) -> int:
     """
     This function is taken from the original tf repo.
@@ -37,7 +35,6 @@ def _make_divisible(v: float, divisor: int, min_value: Optional[int] = None) -> 
     if new_v < 0.9 * v:
         new_v += divisor
     return new_v
-
 
 
 class ConvNormActivation(torch.nn.Sequential):
@@ -97,16 +94,27 @@ class Conv2dNormActivation(ConvNormActivation):
 
     Args:
         in_channels (int): Number of channels in the input image
-        out_channels (int): Number of channels produced by the Convolution-Normalization-Activation block
+        out_channels (int): Number of channels produced
+            by the Convolution-Normalization-Activation block
         kernel_size: (int, optional): Size of the convolving kernel. Default: 3
         stride (int, optional): Stride of the convolution. Default: 1
-        padding (int, tuple or str, optional): Padding added to all four sides of the input. Default: None, in which case it will be calculated as ``padding = (kernel_size - 1) // 2 * dilation``
-        groups (int, optional): Number of blocked connections from input channels to output channels. Default: 1
-        norm_layer (Callable[..., torch.nn.Module], optional): Norm layer that will be stacked on top of the convolution layer. If ``None`` this layer won't be used. Default: ``torch.nn.BatchNorm2d``
-        activation_layer (Callable[..., torch.nn.Module], optional): Activation function which will be stacked on top of the normalization layer (if not None), otherwise on top of the conv layer. If ``None`` this layer won't be used. Default: ``torch.nn.ReLU``
+        padding (int, tuple or str, optional): Padding added to all four sides of the input.
+            Default: None, in which case it will be calculated
+            as ``padding = (kernel_size - 1) // 2 * dilation``
+        groups (int, optional): Number of blocked connections from input channels
+            to output channels. Default: 1
+        norm_layer (Callable[..., torch.nn.Module], optional): Norm layer
+            that will be stacked on top of the convolution layer.
+            If ``None`` this layer won't be used. Default: ``torch.nn.BatchNorm2d``
+        activation_layer (Callable[..., torch.nn.Module], optional): Activation function
+            which will be stacked on top of the normalization layer (if not None),
+            otherwise on top of the conv layer. If ``None`` this layer won't be used.
+            Default: ``torch.nn.ReLU``
         dilation (int): Spacing between kernel elements. Default: 1
-        inplace (bool): Parameter for the activation layer, which can optionally do the operation in-place. Default ``True``
-        bias (bool, optional): Whether to use bias in the convolution layer. By default, biases are included if ``norm_layer is None``.
+        inplace (bool): Parameter for the activation layer, which can optionally do
+            the operation in-place. Default ``True``
+        bias (bool, optional): Whether to use bias in the convolution layer.
+            By default, biases are included if ``norm_layer is None``.
 
     """
 
@@ -143,14 +151,18 @@ class Conv2dNormActivation(ConvNormActivation):
 
 class SElayer(torch.nn.Module):
     """
-    This block implements the Squeeze-and-Excitation block from https://arxiv.org/abs/1709.01507 (see Fig. 1).
-    Parameters ``activation``, and ``scale_activation`` correspond to ``delta`` and ``sigma`` in eq. 3.
+    This block implements the Squeeze-and-Excitation block from
+    https://arxiv.org/abs/1709.01507 (see Fig. 1).
+    Parameters ``activation``, and ``scale_activation`` correspond to
+    ``delta`` and ``sigma`` in eq. 3.
 
     Args:
         input_channels (int): Number of channels in the input image
         squeeze_channels (int): Number of squeeze channels
-        activation (Callable[..., torch.nn.Module], optional): ``delta`` activation. Default: ``torch.nn.ReLU``
-        scale_activation (Callable[..., torch.nn.Module]): ``sigma`` activation. Default: ``torch.nn.Sigmoid``
+        activation (Callable[..., torch.nn.Module], optional): ``delta`` activation.
+            Default: ``torch.nn.ReLU``
+        scale_activation (Callable[..., torch.nn.Module]): ``sigma`` activation.
+            Default: ``torch.nn.Sigmoid``
     """
     def __init__(
         self,
@@ -166,16 +178,17 @@ class SElayer(torch.nn.Module):
         self.activation = activation()
         self.scale_activation = scale_activation()
 
-    def _scale(self, input: Tensor) -> Tensor:
-        scale = self.avgpool(input)
+    def _scale(self, input_t: Tensor) -> Tensor:
+        scale = self.avgpool(input_t)
         scale = self.fc1(scale)
         scale = self.activation(scale)
         scale = self.fc2(scale)
         return self.scale_activation(scale)
 
-    def forward(self, input: Tensor) -> Tensor:
-        scale = self._scale(input)
-        return scale * input
+    def forward(self, input_t: Tensor) -> Tensor:
+        scale = self._scale(input_t)
+        return scale * input_t
+
 
 class InvertedResidualConfig:
     # Stores information listed at Tables 1 and 2 of the MobileNetV3 paper
@@ -214,7 +227,7 @@ class InvertedResidual(nn.Module):
         se_layer: Callable[..., nn.Module] = partial(SElayer, scale_activation=nn.Hardsigmoid),
     ):
         super().__init__()
-        if not (1 <= cnf.stride <= 2):
+        if not 1 <= cnf.stride <= 2:
             raise ValueError("illegal stride value")
 
         self.use_res_connect = cnf.stride == 1 and cnf.input_channels == cnf.out_channels
@@ -255,7 +268,8 @@ class InvertedResidual(nn.Module):
         # project
         layers.append(
             Conv2dNormActivation(
-                cnf.expanded_channels, cnf.out_channels, kernel_size=1, norm_layer=norm_layer, activation_layer=None
+                cnf.expanded_channels, cnf.out_channels, kernel_size=1,
+                norm_layer=norm_layer, activation_layer=None
             )
         )
 
@@ -263,10 +277,10 @@ class InvertedResidual(nn.Module):
         self.out_channels = cnf.out_channels
         self._is_cn = cnf.stride > 1
 
-    def forward(self, input: Tensor) -> Tensor:
-        result = self.block(input)
+    def forward(self, input_t: Tensor) -> Tensor:
+        result = self.block(input_t)
         if self.use_res_connect:
-            result += input
+            result += input_t
         return result
 
 
@@ -279,7 +293,6 @@ class MobileNetV3(nn.Module):
         block: Optional[Callable[..., nn.Module]] = None,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
         dropout: float = 0.2,
-        
         **kwargs: Any,
     ) -> None:
         """
@@ -288,8 +301,10 @@ class MobileNetV3(nn.Module):
             inverted_residual_setting (List[InvertedResidualConfig]): Network structure
             last_channel (int): The number of channels on the penultimate layer
             num_classes (int): Number of classes
-            block (Optional[Callable[..., nn.Module]]): Module specifying inverted residual building block for mobilenet
-            norm_layer (Optional[Callable[..., nn.Module]]): Module specifying the normalization layer to use
+            block (Optional[Callable[..., nn.Module]]): Module specifying
+                inverted residual building block for mobilenet
+            norm_layer (Optional[Callable[..., nn.Module]]): Module specifying
+                the normalization layer to use
             dropout (float): The droupout probability
         """
         super().__init__()
@@ -342,7 +357,7 @@ class MobileNetV3(nn.Module):
 
         self.features = nn.Sequential(*layers)
         self.avgpool = nn.AdaptiveAvgPool2d(1)
-       
+
         self.pred_classifier = nn.Sequential(
             nn.Linear(lastconv_output_channels, last_channel),
             nn.Hardswish(inplace=True),
@@ -382,14 +397,13 @@ class MobileNetV3(nn.Module):
                 return features, x
 
         x = self.pred_classifier(x)
-        
+
         x = self.classifier(x)
-       
+
         x = torch.sigmoid(x)
         return x
 
-    def forward(self, x: Tensor, return_features = False, get_net_outputs = False) -> Tensor:
-  
+    def forward(self, x: Tensor, return_features=False, get_net_outputs=False) -> Tensor:
         return self._forward_impl(x, return_features, get_net_outputs)
 
 
@@ -403,7 +417,6 @@ class MobileNetV3_meta(nn.Module):
         norm_layer: Optional[Callable[..., nn.Module]] = None,
         dropout: float = 0.2,
         reagents_num: int = 0,
-        
         **kwargs: Any,
     ) -> None:
         """
@@ -412,8 +425,10 @@ class MobileNetV3_meta(nn.Module):
             inverted_residual_setting (List[InvertedResidualConfig]): Network structure
             last_channel (int): The number of channels on the penultimate layer
             num_classes (int): Number of classes
-            block (Optional[Callable[..., nn.Module]]): Module specifying inverted residual building block for mobilenet
-            norm_layer (Optional[Callable[..., nn.Module]]): Module specifying the normalization layer to use
+            block (Optional[Callable[..., nn.Module]]): Module specifying
+                inverted residual building block for mobilenet
+            norm_layer (Optional[Callable[..., nn.Module]]): Module specifying
+                the normalization layer to use
             dropout (float): The droupout probability
         """
         super().__init__()
@@ -468,7 +483,7 @@ class MobileNetV3_meta(nn.Module):
 
         self.features = nn.Sequential(*layers)
         self.avgpool = nn.AdaptiveAvgPool2d(1)
-       
+
         self.pred_classifier = nn.Sequential(
             nn.Linear(lastconv_output_channels, last_channel),
             nn.Hardswish(inplace=True),
@@ -510,15 +525,16 @@ class MobileNetV3_meta(nn.Module):
 
         if reagent is not None:
             x = torch.cat((x, reagent), dim=1)
-        
+
         x = self.classifier_meta(x)
-       
+
         x = torch.sigmoid(x)
         return x
 
-    def forward(self, x: Tensor, reagent=None, return_features = False, get_net_outputs = False) -> Tensor:
-  
+    def forward(self, x: Tensor, reagent=None,
+                return_features=False, get_net_outputs=False) -> Tensor:
         return self._forward_impl(x, reagent, return_features, get_net_outputs)
+
 
 class MobileNetV3_EC(nn.Module):
     def __init__(
@@ -530,7 +546,7 @@ class MobileNetV3_EC(nn.Module):
         norm_layer: Optional[Callable[..., nn.Module]] = None,
         dropout: float = 0.2,
         reagents_num: int = 0,
-        
+
         **kwargs: Any,
     ) -> None:
         """
@@ -539,8 +555,10 @@ class MobileNetV3_EC(nn.Module):
             inverted_residual_setting (List[InvertedResidualConfig]): Network structure
             last_channel (int): The number of channels on the penultimate layer
             num_classes (int): Number of classes
-            block (Optional[Callable[..., nn.Module]]): Module specifying inverted residual building block for mobilenet
-            norm_layer (Optional[Callable[..., nn.Module]]): Module specifying the normalization layer to use
+            block (Optional[Callable[..., nn.Module]]): Module specifying
+                inverted residual building block for mobilenet
+            norm_layer (Optional[Callable[..., nn.Module]]): Module specifying
+                the normalization layer to use
             dropout (float): The droupout probability
         """
         super().__init__()
@@ -595,13 +613,13 @@ class MobileNetV3_EC(nn.Module):
 
         self.features = nn.Sequential(*layers)
         self.avgpool = nn.AdaptiveAvgPool2d(1)
-       
+
         self.pred_classifier = nn.Sequential(
             nn.Linear(lastconv_output_channels, last_channel),
             nn.Hardswish(inplace=True),
             nn.Dropout(p=dropout, inplace=True),
         )
-        
+
         self.classifier_meta = nn.Linear(last_channel + self.reagents_num, num_classes)
 
         for m in self.modules():
@@ -639,19 +657,20 @@ class MobileNetV3_EC(nn.Module):
 
         if reagent is not None:
             x = torch.cat((x, reagent), dim=1)
-        
+
         x = self.classifier_meta(x)
-       
+
         # x = self.softmax(x)
         return x
 
-    def forward(self, x: Tensor, reagent=None, return_features = False, get_net_outputs = False) -> Tensor:
-  
+    def forward(self, x: Tensor, reagent=None, return_features=False,
+                get_net_outputs=False) -> Tensor:
         return self._forward_impl(x, reagent, return_features, get_net_outputs)
 
+
 def _mobilenet_v3_conf(
-    arch: str, width_mult: float = 1.0, reduced_tail: bool = False, dilated: bool = False, **kwargs: Any
-):
+    arch: str, width_mult: float = 1.0, reduced_tail: bool = False, dilated: bool = False, **kwargs
+        ):
     reduce_divider = 2 if reduced_tail else 1
     dilation = 2 if dilated else 1
 
@@ -673,11 +692,14 @@ def _mobilenet_v3_conf(
             bneck_conf(80, 3, 480, 112, True, "HS", 1, 1),
             bneck_conf(112, 3, 672, 112, True, "HS", 1, 1),
             bneck_conf(112, 5, 672, 160 // reduce_divider, True, "HS", 2, dilation),  # C4
-            bneck_conf(160 // reduce_divider, 5, 960 // reduce_divider, 160 // reduce_divider, True, "HS", 1, dilation),
-            bneck_conf(160 // reduce_divider, 5, 960 // reduce_divider, 160 // reduce_divider, True, "HS", 1, dilation),
+            bneck_conf(160 // reduce_divider, 5, 960 // reduce_divider, 160 // reduce_divider,
+                       True, "HS", 1, dilation),
+            bneck_conf(160 // reduce_divider, 5, 960 // reduce_divider, 160 // reduce_divider,
+                       True, "HS", 1, dilation),
         ]
         last_channel = adjust_channels(1280 // reduce_divider)  # C5
-    elif arch == "mobilenet_v3_small" or arch == "mobilenet_v3_small_meta" or arch == "mobilenet_v3_small_ec":
+    elif (arch == "mobilenet_v3_small" or arch == "mobilenet_v3_small_meta"
+          or arch == "mobilenet_v3_small_ec"):
         inverted_residual_setting = [
             bneck_conf(16, 3, 16, 16, True, "RE", 2, 1),  # C1
             bneck_conf(16, 3, 72, 24, False, "RE", 2, 1),  # C2
@@ -688,8 +710,10 @@ def _mobilenet_v3_conf(
             bneck_conf(40, 5, 120, 48, True, "HS", 1, 1),
             bneck_conf(48, 5, 144, 48, True, "HS", 1, 1),
             bneck_conf(48, 5, 288, 96 // reduce_divider, True, "HS", 2, dilation),  # C4
-            bneck_conf(96 // reduce_divider, 5, 576 // reduce_divider, 96 // reduce_divider, True, "HS", 1, dilation),
-            bneck_conf(96 // reduce_divider, 5, 576 // reduce_divider, 96 // reduce_divider, True, "HS", 1, dilation),
+            bneck_conf(96 // reduce_divider, 5, 576 // reduce_divider, 96 // reduce_divider,
+                       True, "HS", 1, dilation),
+            bneck_conf(96 // reduce_divider, 5, 576 // reduce_divider, 96 // reduce_divider,
+                       True, "HS", 1, dilation),
         ]
         last_channel = adjust_channels(1024 // reduce_divider)  # C5
     else:
@@ -701,10 +725,10 @@ def _mobilenet_v3_conf(
 def _mobilenet_v3(
     inverted_residual_setting: List[InvertedResidualConfig],
     last_channel: int,
-    architecture: str=None,
+    architecture: str = None,
     **kwargs: Any,
 ) -> MobileNetV3:
-    
+
     if architecture is not None and "meta" in architecture:
         model = MobileNetV3_meta(inverted_residual_setting, last_channel, **kwargs)
     elif "ec" in architecture:
@@ -726,16 +750,19 @@ def mobilenet_v3_small(**kwargs: Any) -> MobileNetV3:
 
 
 def mobilenet_v3_large_meta(**kwargs: Any) -> MobileNetV3:
-    inverted_residual_setting, last_channel = _mobilenet_v3_conf("mobilenet_v3_large_meta", **kwargs)
-    return _mobilenet_v3(inverted_residual_setting, last_channel, "mobilenet_v3_large_meta", **kwargs)
+    inverted_residual_setting, last_channel = _mobilenet_v3_conf("mobilenet_v3_large_meta",
+                                                                 **kwargs)
+    return _mobilenet_v3(inverted_residual_setting, last_channel,
+                         "mobilenet_v3_large_meta", **kwargs)
 
 
 def mobilenet_v3_small_meta(**kwargs: Any) -> MobileNetV3:
-    inverted_residual_setting, last_channel = _mobilenet_v3_conf("mobilenet_v3_small_meta", **kwargs)
-    return _mobilenet_v3(inverted_residual_setting, last_channel, "mobilenet_v3_small_meta", **kwargs)
+    inverted_residual_setting, last_channel = _mobilenet_v3_conf("mobilenet_v3_small_meta",
+                                                                 **kwargs)
+    return _mobilenet_v3(inverted_residual_setting, last_channel,
+                         "mobilenet_v3_small_meta", **kwargs)
+
 
 def mobilenet_v3_small_ec(**kwargs: Any) -> MobileNetV3:
     inverted_residual_setting, last_channel = _mobilenet_v3_conf("mobilenet_v3_small_ec", **kwargs)
     return _mobilenet_v3(inverted_residual_setting, last_channel, "mobilenet_v3_small_ec", **kwargs)
-
-
