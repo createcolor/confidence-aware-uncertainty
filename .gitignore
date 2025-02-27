@@ -1,0 +1,9 @@
+*.pyc
+*.csv
+*.tif
+datasets/
+nets/
+predictions/
+results/
+segmentation/res/
+segmentation/test_configs/

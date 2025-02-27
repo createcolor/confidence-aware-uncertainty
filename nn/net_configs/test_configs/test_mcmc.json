@@ -1,0 +1,13 @@
+{
+"path2dataset": "/mnt/nuberg/datasets/medical_data/alvs_dataset_all",
+"test_markup": "/beta/students/iarchuk/data/markup_20_80_reagents/test_dataset_20_80.json",
+"nets_dir": "/beta/students/iarchuk/models_meta/MobileNet_small_10_10_80_meta_6",
+"net_config": "/beta/students/iarchuk/models_meta/MobileNet_small_10_10_80_meta_6/config_MobileNet_small_10_10_80_meta_6_700ep.json",
+"answers_path": "/beta/students/iarchuk/models_meta/mcmc/answers",
+"basic_model_name": "MobileNet_small_10_10_80_meta_6_700ep",
+"number_of_nets": 10,
+"nets_for_ensemble": 10,
+"epochs_step": 15,
+"epochs_num_start": 700,
+"test_config": "/beta/students/iarchuk/models_meta/configs/test_config.json"
+}
