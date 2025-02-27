@@ -1,0 +1,42 @@
+{
+    "path2misclassified_alvs": "/alpha/korchagin/projects/expressto/nn/outputs/MobileNet_small_10_10_80_meta_8_misclass.json",
+    "UE_methods": {
+        "MCMC_var": { 
+            "path2save_reg_curves_info": "mcmc.json",
+            "path2uncertainties": "./results/mcmc_scores",
+            "single_net_file_name_template": "mcmc"
+        },
+        "MCD_var": {
+            "path2save_reg_curves_info": "mc_dropout.json",
+            "path2uncertainties": "./results/mc_dropout_scores",
+            "single_net_file_name_template": "MobileNet_small_10_10_80_meta_8_400ep"
+        },
+        
+        "CE": {
+            "path2save_reg_curves_info": "CE.json",
+            "path2uncertainties": "results/unc_CE.json",
+            "single_net_file_name_template": null
+        },
+        "experts_TV": {
+            "path2save_reg_curves_info": "experts_TV.json",
+            "path2uncertainties": "./results/unc_experts_TV.json",
+            "single_net_file_name_template": null
+        },
+        "unc_gt_experts_TV_sum_CE_var": {
+            "path2save_reg_curves_info": "unc_gt_experts_TV_sum_CE_var.json",
+            "path2uncertainties": "./results/unc_gt_experts_TV_sum_CE_var.json",
+            "single_net_file_name_template": null
+        },
+        "unc_pred_experts_TV_sum_CE_var": {
+            "path2save_reg_curves_info": "gt_experts_jini_index_sum_CE_var.json",
+            "path2uncertainties": "./results/unc_pred_experts_TV_sum_CE_var.json",
+            "single_net_file_name_template": null
+        },
+
+        "HUQ_0.5": { 
+            "path2save_reg_curves_info": "huq.json",
+            "path2uncertainties": "./results/huq",
+            "single_net_file_name_template": "huq_alpha=0.5"
+        }
+    }
+}
