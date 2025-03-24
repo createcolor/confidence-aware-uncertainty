@@ -26,7 +26,7 @@ The LIDC-IDRI and RIGA datasets are available on the internet. *TODO: add proper
 ## Overview
 
 ### Uncertainty Decomposition via Law of Total Variance
-For a an input image $x$ and a binary class label $y \in \{0, 1\}$, the uncertainty in predicting $y$ can be decomposed via the law of total variance:
+For a an input image $x$ and a binary class label $y \in \lbrace 0, 1\rbrace$, the uncertainty in predicting $y$ can be decomposed via the law of total variance:
 
 ![equation](https://latex.codecogs.com/svg.image?%5Cmathbb%7BV%7D(y%5Cmid%20x,%5Cmathcal%7BD%7D)=%5Cmathbb%7BV%7D_%7B%5Ctheta%5Csim%5Cmathbb%7BP%7D(%5Ctheta%5Cmid%5Cmathcal%7BD%7D)%7D%5B%5Cmathbb%7BE%7D(y%5Cmid%20x,%5Ctheta)%5D&plus;%5Cmathbb%7BE%7D_%7B%5Ctheta%5Csim%5Cmathbb%7BP%7D(%5Ctheta%5Cmid%5Cmathcal%7BD%7D)%7D%5B%5Cmathbb%7BV%7D(y%5Cmid%20x,%5Ctheta)%5D.)
 
