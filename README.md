@@ -27,10 +27,15 @@ The LIDC-IDRI and RIGA datasets are available on the internet. *TODO: add proper
 
 ### Uncertainty Decomposition via Law of Total Variance
 For a an input image $x$ and a binary class label $y \in \{0, 1\}$, the uncertainty in predicting $y$ can be decomposed via the law of total variance:
-$$ \mathbb{V}(y \mid x, \mathcal{D}) = \mathbb{V}_{\theta \sim \mathbb{P}(\theta \mid \mathcal{D})}[\mathbb{E}(y \mid x, \theta)] + \mathbb{E}_{\theta \sim \mathbb{P}(\theta \mid \mathcal{D})}[\mathbb{V}(y \mid x, \theta)]. $$
+
+![equation](https://latex.codecogs.com/svg.image?%5Cmathbb%7BV%7D(y%5Cmid%20x,%5Cmathcal%7BD%7D)=%5Cmathbb%7BV%7D_%7B%5Ctheta%5Csim%5Cmathbb%7BP%7D(%5Ctheta%5Cmid%5Cmathcal%7BD%7D)%7D%5B%5Cmathbb%7BE%7D(y%5Cmid%20x,%5Ctheta)%5D&plus;%5Cmathbb%7BE%7D_%7B%5Ctheta%5Csim%5Cmathbb%7BP%7D(%5Ctheta%5Cmid%5Cmathcal%7BD%7D)%7D%5B%5Cmathbb%7BV%7D(y%5Cmid%20x,%5Ctheta)%5D.)
+
 The first term represents epistemic uncertainty and the second term represents aleatoric uncertainty. Both terms can be approximated with an ensemble of $K$ models via Monte Carlo methods:
-$$ \mathbb{V}_{\theta} [\mathbb{E}(y\mid x, \theta)] \approx \frac1K \sum_{i = 1}^K (p_{\theta_i}(x) - \overline{p_{\theta}}(x))^2, $$
-$$ \mathbb{E}_{\theta}[\mathbb{V}(y \mid x, \theta)] \approx \frac1K\sum_{i = 1}^K p_{\theta_i}(x)(1 - p_{\theta_i}(x)), $$
+
+![equation](https://latex.codecogs.com/svg.image?%5Cmathbb%7BV%7D_%7B%5Ctheta%7D%5B%5Cmathbb%7BE%7D(y%5Cmid%20x,%5Ctheta)%5D%5Capprox%5Cfrac1K%5Csum_%7Bi=1%7D%5EK(p_%7B%5Ctheta_i%7D(x)-%5Coverline%7Bp_%7B%5Ctheta%7D%7D(x))%5E2,)
+
+![equation](https://latex.codecogs.com/svg.image?%5Cmathbb%7BE%7D_%7B%5Ctheta%7D%5B%5Cmathbb%7BV%7D(y%5Cmid%20x,%5Ctheta)%5D%5Capprox%5Cfrac1K%5Csum_%7Bi=1%7D%5EK%20p_%7B%5Ctheta_i%7D(x)(1-p_%7B%5Ctheta_i%7D(x)),)
+
 where $\theta_i$ are parameters of the $i$-th model and $\overline{p_\theta}(x) = \frac1K \sum p_{\theta_i}(x)$.
 
 ### Confidence-based Aleatoric Uncertainty Model 
