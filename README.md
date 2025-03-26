@@ -57,17 +57,17 @@ Using soft labels allows to achieve better values of Mean Absolute Error (MAE) a
 ### Blood Typing
 Usage of CAEs to estimate aleatoric uncertainty significantly reduces Area Above accuracy-rejection Curve (AAC) as well as Throwaway Rate required to achieve Accuracy above 99% (TRA-99).
 
-![image](rm-images/results_classification-1.png)
+<img src="rm-images/results_classification-1.png" alt="classification" height="350"/>
 
 ### Segmentation
 Our approach improves AAC by **over five times** compared to only using a basic ensemble on the RIGA segmentation task. Throwaway Rate required to achieve Dice of $X$ (TRD-$X$) is also improved.
 
-![image](rm-images/results_riga_cls1-1.png)
-![image](rm-images/results_riga_cls2-1.png)
+<img src="rm-images/results_riga_cls1-1.png" alt="riga1" height="350"/>
+<img src="rm-images/results_riga_cls2-1.png" alt="riga2" height="350"/>
 
 However, results on the LIDC-IDRI segmentation task show reduced performance compared to the basic approach. We hypothesize that this is due to low agreement between experts, providing high noise levels to soft labels.
 
-![image](rm-images/results_segmentation-1.png)
+<img src="rm-images/results_segmentation-1.png" alt="segmentation" height="350"/>
 
 ## Citation
 If you find our work useful, please give repository a star and cite our paper.
